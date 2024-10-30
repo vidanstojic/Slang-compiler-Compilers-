@@ -1,5 +1,12 @@
 package org.raf.slang.ast;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@EqualsAndHashCode
 public class SimpleStatement extends Statement{
 
     private String name;
