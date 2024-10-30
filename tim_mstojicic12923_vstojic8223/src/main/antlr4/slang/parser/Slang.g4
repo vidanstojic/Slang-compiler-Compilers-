@@ -1,81 +1,81 @@
 grammar Slang;
 
 // PARSERSKA GRAMATIKA
-start: statement* EOF;
+
+start
+    :  (statement | functionDefinition)* EOF
+    ;
 
 statement
-    : declaration ';'
-    | printStatement ';'
-    | expr ';'
-    /*| for  // pocetak naseg dodavanja
-    | while
-    | scanf
-    | funkcija
-    | if i else*/
+    : NUMBER_KEYWORD ID ('=' expr)? ';'
+    | BOOLEAN_KEYWORD ID ('=' expr)? ';'
+    | ID '=' expr ';'
+    | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
+    | ifStatement
+    | loop
+    | functionCall
+    /// ovde dodati i niz
     ;
 
-declaration
-    : NUMBER_KEYWORD ID '=' expr ';'
-    | BOOLEAN_KEYWORD ID '=' expr ';'
-    | expr ';'
-    ;
-
-printStatement
-    : PRINT_KEYWORD '(' expr (COMMA expr)* ')' // Print statement
-    // proveriti na koji nacin bi ispisivali niz
-    ;
-
-expr: orExpr;
-
-orExpr
-    : andExpr (OR andExpr)* // Omogućava više `||` izraza
-    ;
-
-andExpr
-    : equalityExpr (AND equalityExpr)* // Omogućava više `&&` izraza
+ifStatement
+    : IF_KEYWORD '(' ID('<' | '>' '<=' | '>=' | '==') expr ')' '{'(statement)* '}' (elseStatement)? // da li staviti ID < expr ili expr < expr??
     ;
 
 
-equalityExpr
-    : relationalExpr ((EQUAL | NOTEQUAL) relationalExpr)* // Omogućava poređenje jednakosti
-    ;
-
-relationalExpr
-    : addSubExpr ((GT | LT | GE | LE) addSubExpr)* // Omogućava relacije
-    ;
-
-addSubExpr
-    : mulDivExpr ( (ADD | SUB) mulDivExpr)* // Omogućava sabiranje i oduzimanje
-    ;
-
-mulDivExpr
-    : exponentExpr ((MUL | DIV | MOD) exponentExpr)* // Omogućava množenje, deljenje, mod
-    ;
-
-exponentExpr
-    : atom (CARET exponentExpr)? // Desno asocijativno eksponenciranje
-    ;
-
-atom
-    : NUMBER_KEYWORD #NumberConstant
-    | ID #VariableReference
-    | '(' expr ')' #GroupingOperator
-    | squad #ArrayConstructor
-    ;
-
-squad
-    : '[' (expr (COMMA expr)*)? ']'
+elseStatement
+    : ELSE_KEYWORD '{'(statement)* '}'
     ;
 
 
+functionDefinition
+    : FUNCTION_KEYWORD ID '(' functionArgumentList? ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}'
+    ;
+
+functionCall
+    : ID '(' functionArgumentList? ')' ';'
+    ;
+
+functionArgumentList
+    : expr (',' expr)*
+    ;
 
 
+loop
+    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' '<=' | '>=') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
+    | WHILE_KEYWORD '(' ID ('<' | '>' '<=' | '>=') expr  ')''{' (statement)* '}'
+    ;
 
+expr
+    : functionCall
+    | expr (AND | OR) relationalOperands
+    | relationalOperands
+    ;
+
+relationalOperands
+    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO) addSubOperands
+    | addSubOperands
+    ;
+
+addSubOperands
+    : addSubOperands(ADD | SUB) mulDivOperands
+    | mulDivOperands
+    ;
+
+mulDivOperands
+    : mulDivOperands(MUL | DIV) core
+    | core
+    ;
+
+core
+    : NUMBER_LITERAL
+    | BOOLEAN_LITERAL
+    | ID
+    ;
 
 
 // LEKSICKA GRAMATIKA
 
-fragment DIGIT: [0-9];
+//fragment DIGIT: [0-9];
 /*
 ** proveriti za grab i dropmsg
 */
@@ -87,13 +87,16 @@ NUMBER_KEYWORD: 'numero';
 BOOLEAN_KEYWORD: 'yeahNah';
 RETURN_KEYWORD: 'getback';
 VOID_KEYWORD: 'empty';
+ARRAY_KEYWORD: 'squad';
 PRINT_KEYWORD: 'dropmsg';
 SCAN_KEYWORD: 'grabmsg';
+FUNCTION_KEYWORD: 'action';
 // LITERALS
-BOOL_LITERAL: 'true' | 'false';
-NUMBER_LITERAL: ('-')? DIGIT+ ('.' DIGIT+)?;
+BOOLEAN_LITERAL: 'true' | 'false';
+NUMBER_LITERAL: ('-')? [0-9]+ ('.' [0-9]+)?;
 
 // Separators
+
 LPAREN : '(';
 RPAREN : ')';
 LBRACE : '{';
@@ -107,13 +110,13 @@ DOT    : '.';
 // Operators
 
 ASSIGN   : '=';
-GT       : '>';
-LT       : '<';
+GREATERTHAN       : '>';
+LESSTHAN       : '<';
 BANG     : '!';
 COLON    : ':';
-EQUAL    : '==';
-LE       : '<=';
-GE       : '>=';
+EQUALTO    : '==';
+LESSTHANOREQ       : '<=';
+GREATERTHANOREQ       : '>=';
 NOTEQUAL : '!=';
 AND      : '&&';
 OR       : '||';
@@ -127,7 +130,6 @@ MOD      : '%';
 CARET    : '^';
 // IDENTIFIERS
 ID : [a-zA-Z] [a-zA-Z0-9]* ; // match usual identifier spec
-//DIGIT : [0-9]+ ; // match integers
 
 // COMMENTS AND SPACES
 SPACES: [ \u000B\t\r\n\p{White_Space}] -> skip;
