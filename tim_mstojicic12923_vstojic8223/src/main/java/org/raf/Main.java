@@ -1,14 +1,14 @@
+package org.raf;
 
-
-import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.Parser;
 import org.raf.slang.Scanner;
 import org.raf.slang.Slang;
+import org.raf.slang.ast.CSTtoASTConverter;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 
 
 public class Main {
@@ -58,13 +58,24 @@ public class Main {
 
 
     private static void run(String source) {
-        Scanner scanner = new Scanner();
+/*        Scanner scanner = new Scanner(slang);
+        var tokens = scanner.slang(source);
+
+        if (slang.hadError()) return;
+
+        Parser parser = new Parser(slang);
+        var tree = parser.getSyntaxTree(tokens);
 
 
+        System.out.println("Syntax Tree: " + PrettyPrint.prettyPrintTree(tree, parser.getCalculatorParser().getRuleNames()));
 
-        List<? extends Token> tokens = scanner.getAllTokens(source);
-        if (hadError) return;
-        System.out.println(tokens);
+        if (slang.hadError()) return;
+
+        System.out.println("AST:");
+        var pp = new ASTPrettyPrinter(System.out);
+        var program = (StatementList) tree.accept(new CSTtoASTConverter());
+
+        program.prettyPrint(pp);*/
     }
 
 }

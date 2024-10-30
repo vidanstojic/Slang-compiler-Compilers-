@@ -16,11 +16,14 @@ statement
     | printStatement
     | scanStatement
     | functionCallStatement
-    /// ovde dodati i niz
     ;
 
 ifStatement
-    : IF_KEYWORD '(' ID('<' | '>' '<=' | '>=' | '==') expr ')' '{'(statement)* '}' (elseStatement)? // da li staviti ID < expr ili expr < expr??
+    : IF_KEYWORD '(' expr('<' | '>' '<=' | '>=' | '==') expr ')' '{'(statement)* '}' (elseStatement)?
+    ;
+
+elseStatement
+    : ELSE_KEYWORD '{'(statement)* '}'
     ;
 
 
@@ -29,13 +32,9 @@ loopStatement
     | WHILE_KEYWORD '(' ID ('<' | '>' '<=' | '>=') expr  ')''{' (statement)* '}'
     ;
 
-elseStatement
-    : ELSE_KEYWORD '{'(statement)* '}'
-    ;
-
 
 functionDefinition
-    : FUNCTION_KEYWORD ID '(' functionArgumentList? ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}'
+    : FUNCTION_KEYWORD ID '(' functionArgumentList? ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}' // ispraviti da budu tipovi za argumente
     ;
 
 functionCallStatement
