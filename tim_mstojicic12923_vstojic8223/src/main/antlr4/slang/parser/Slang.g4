@@ -3,19 +3,24 @@ grammar Slang;
 // PARSERSKA GRAMATIKA
 
 start
-    :  (statement | functionDefinition)* EOF
+    :  statement* EOF
     ;
 
 statement
-    : NUMBER_KEYWORD ID ('=' expr)? ';'
-    | BOOLEAN_KEYWORD ID ('=' expr)? ';'
-    | ID '=' expr ';'
-    | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
+    : simpleStatement
     | ifStatement
     | loopStatement
     | printStatement
     | scanStatement
+    | functionDefinition
     | functionCallStatement
+    ;
+
+simpleStatement
+    :NUMBER_KEYWORD ID ('=' expr)? ';'
+    | BOOLEAN_KEYWORD ID ('=' expr)? ';'
+    | ID '=' expr ';'
+    | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
     ;
 
 ifStatement

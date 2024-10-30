@@ -13,5 +13,5 @@ public abstract class Tree {
         this.location = location;
     }
 
-
+    public abstract void nodePrint(ASTNodePrinter pp);
 }
