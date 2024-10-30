@@ -12,8 +12,10 @@ statement
     | ID '=' expr ';'
     | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
     | ifStatement
-    | loop
-    | functionCall
+    | loopStatement
+    | printStatement
+    | scanStatement
+    | functionCallStatement
     /// ovde dodati i niz
     ;
 
@@ -21,6 +23,11 @@ ifStatement
     : IF_KEYWORD '(' ID('<' | '>' '<=' | '>=' | '==') expr ')' '{'(statement)* '}' (elseStatement)? // da li staviti ID < expr ili expr < expr??
     ;
 
+
+loopStatement
+    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' '<=' | '>=') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
+    | WHILE_KEYWORD '(' ID ('<' | '>' '<=' | '>=') expr  ')''{' (statement)* '}'
+    ;
 
 elseStatement
     : ELSE_KEYWORD '{'(statement)* '}'
@@ -31,7 +38,7 @@ functionDefinition
     : FUNCTION_KEYWORD ID '(' functionArgumentList? ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}'
     ;
 
-functionCall
+functionCallStatement
     : ID '(' functionArgumentList? ')' ';'
     ;
 
@@ -39,14 +46,16 @@ functionArgumentList
     : expr (',' expr)*
     ;
 
+printStatement
+    : PRINT_KEYWORD '(' expr(','expr)*')'';'
+    ;
 
-loop
-    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' '<=' | '>=') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
-    | WHILE_KEYWORD '(' ID ('<' | '>' '<=' | '>=') expr  ')''{' (statement)* '}'
+scanStatement
+    : SCAN_KEYWORD '('ID')'';'
     ;
 
 expr
-    : functionCall
+    : functionCallStatement
     | expr (AND | OR) relationalOperands
     | relationalOperands
     ;
