@@ -1,6 +1,8 @@
 package org.raf;
 
-import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.raf.slang.Parser;
 import org.raf.slang.Scanner;
 import org.raf.slang.Slang;
 import org.raf.slang.ast.ASTNodePrinter;
@@ -29,17 +31,20 @@ public class Main {
     }
 
     private static void runFile(String path) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-            StringBuilder content = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                content.append(line).append(System.lineSeparator());
-            }
-            run(content.toString());
-        }
-
-        if (hadError) System.exit(65);
-        if (hadRuntimeError) System.exit(70);
+//        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+//            StringBuilder content = new StringBuilder();
+//            String line;
+//            while ((line = reader.readLine()) != null) {
+//                content.append(line).append(System.lineSeparator());
+//            }
+//            run(content.toString());
+//        }
+//
+//        if (hadError) System.exit(65);
+//        if (hadRuntimeError) System.exit(70);
+        run(CharStreams.fromFileName(path));
+        if (slang.hadError()) System.exit(65);
+        if (slang.hadRuntimeError()) System.exit(70);
     }
 
     private static void runPrompt() throws IOException {
@@ -54,15 +59,17 @@ public class Main {
                 break;
             }
 
-            run(line);
-            hadError = false;
+
+            slang.setHadError(false);
+            slang.setHadRuntimeError(false);
+            run(CharStreams.fromString(line));
         }
     }
 
 
-    private static void run(String source) {
+    private static void run(CharStream source) {
         Scanner scanner = new Scanner(slang);
-        var tokens = scanner.getAllTokens(source);
+        var tokens = scanner.getTokens(source);
 
         if (slang.hadError()) return;
 
@@ -70,7 +77,7 @@ public class Main {
         var tree = parser.getSyntaxTree(tokens);
 
 
-        System.out.println("Syntax Tree: " + SlangPrint.slangPrintTree(tree, parser.gets().getRuleNames()));
+        System.out.println("Syntax Tree: " + SlangPrint.slangPrintTree(tree, parser.getSlangParser().getRuleNames()));
 
         if (slang.hadError()) return;
 

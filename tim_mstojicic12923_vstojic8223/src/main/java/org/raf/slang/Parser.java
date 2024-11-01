@@ -21,6 +21,6 @@ public class Parser {
         slangParser.removeErrorListeners();
         slangParser.addErrorListener(compiler.errorListener());
 
-        return SlangParser.start();
+        return slangParser.start();
     }
 }

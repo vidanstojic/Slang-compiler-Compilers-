@@ -14,9 +14,11 @@ public class Scanner {
     public Scanner(Slang compiler) {
         this.compiler = compiler;
     }
-    public List<? extends Token> getAllTokens(String expression) {
-        CharStream chars = CharStreams.fromString(expression);
-        Lexer lexer = new SlangLexer(chars);
-        return lexer.getAllTokens();
+
+    public Lexer getTokens(CharStream chars) {
+        var lex = new SlangLexer(chars);
+        lex.removeErrorListeners();
+        lex.addErrorListener(compiler.errorListener());
+        return lex;
     }
 }
