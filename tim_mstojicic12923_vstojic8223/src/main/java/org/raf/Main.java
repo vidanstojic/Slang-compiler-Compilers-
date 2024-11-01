@@ -3,7 +3,10 @@ package org.raf;
 import org.antlr.v4.runtime.Parser;
 import org.raf.slang.Scanner;
 import org.raf.slang.Slang;
+import org.raf.slang.ast.ASTNodePrinter;
 import org.raf.slang.ast.CSTtoASTConverter;
+import org.raf.slang.ast.StatementList;
+import org.raf.slang.utils.SlangPrint;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -58,8 +61,8 @@ public class Main {
 
 
     private static void run(String source) {
-/*        Scanner scanner = new Scanner(slang);
-        var tokens = scanner.slang(source);
+        Scanner scanner = new Scanner(slang);
+        var tokens = scanner.getAllTokens(source);
 
         if (slang.hadError()) return;
 
@@ -67,15 +70,15 @@ public class Main {
         var tree = parser.getSyntaxTree(tokens);
 
 
-        System.out.println("Syntax Tree: " + PrettyPrint.prettyPrintTree(tree, parser.getCalculatorParser().getRuleNames()));
+        System.out.println("Syntax Tree: " + SlangPrint.slangPrintTree(tree, parser.gets().getRuleNames()));
 
         if (slang.hadError()) return;
 
         System.out.println("AST:");
-        var pp = new ASTPrettyPrinter(System.out);
+        var pp = new ASTNodePrinter(System.out);
         var program = (StatementList) tree.accept(new CSTtoASTConverter());
 
-        program.prettyPrint(pp);*/
+        program.nodePrint(pp);
     }
 
 }

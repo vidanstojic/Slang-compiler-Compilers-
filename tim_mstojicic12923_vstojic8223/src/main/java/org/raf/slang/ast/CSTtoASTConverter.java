@@ -137,35 +137,74 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     @Override
     public Tree visitRelationalOperands(SlangParser.RelationalOperandsContext ctx) {
-        return null;
+        if (ctx.relationalOperands() == null) {
+            return visit(ctx.addSubOperands());
+        }
+
+        // Posetite levi izraz rekurzivno
+        var left = (Expr) visit(ctx.relationalOperands());
+        var right = (Expr) visit(ctx.addSubOperands());
+
+        // Pronađite operator
+        var operatorText = ctx.getChild(1).getText(); // Relacijski operator se nalazi na ovom indeksu
+        var exprOp = switch (operatorText) {
+            case ">" -> Expr.Operation.GREATERTHAN;
+            case "<" -> Expr.Operation.LESSTHAN;
+            case ">=" -> Expr.Operation.GREATERTHANOREQ;
+            case "<=" -> Expr.Operation.LESSTHANOREQ;
+            case "==" -> Expr.Operation.EQUALTO;
+            default -> throw new IllegalArgumentException("Nepoznati relacijski operator: " + operatorText);
+        };
+
+        // Kombinujte leve i desne izraze
+        var loc = left.getLocation().span(right.getLocation());
+        return new Expr(loc, exprOp, left, right);
     }
 
     @Override
     public Tree visitAddSubOperands(SlangParser.AddSubOperandsContext ctx) {
-        return null;
+        if (ctx.addSubOperands() == null) {
+            return visit(ctx.mulDivOperands());
+        }
+
+        // Posetite levi izraz rekurzivno
+        var left = (Expr) visit(ctx.addSubOperands());
+        var right = (Expr) visit(ctx.mulDivOperands());
+
+        // Pronađite operator
+        var operatorText = ctx.getChild(1).getText(); // Ovaj indeks može zavisiti od strukture stabla
+        var exprOp = switch (operatorText) {
+            case "+" -> Expr.Operation.ADD;
+            case "-" -> Expr.Operation.SUB;
+            default -> throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
+        };
+
+        // Kombinujte leve i desne izraze
+        var loc = left.getLocation().span(right.getLocation());
+        return new Expr(loc, exprOp, left, right);
     }
 
     @Override
     public Tree visitMulDivOperands(SlangParser.MulDivOperandsContext ctx) {
-        var value = (Expr) visit(ctx.core());
-/*
-        assert ctx.MUL() == ctx.rest.size();
-        for (int i = 0; i < ctx.op.size(); i++) {
-            var op = ctx.op.get(i);
-            var rhs = (Expr) visit(ctx.rest.get(i));
-
-            var exprOp = switch (op.getType()) {
-                case SlangLexer.MUL -> Expr.Operation.MUL;
-                case SlangLexer.DIV -> Expr.Operation.DIV;
-                default -> throw new IllegalArgumentException("unhandled expr op " + op);
-            };
-
-            var loc = value.getLocation().span(rhs.getLocation());
-            value = new Expr(loc, exprOp, value, rhs);
+        if (ctx.mulDivOperands() == null) {
+            return visit(ctx.core());
         }
-        return value;
-*/
-        return null;
+
+        // Posetite levi izraz rekurzivno
+        var left = (Expr) visit(ctx.mulDivOperands());
+        var right = (Expr) visit(ctx.core());
+
+        // Pronađite operator
+        var operatorText = ctx.getChild(1).getText(); // Ovaj indeks može zavisiti od strukture stabla
+        var exprOp = switch (operatorText) {
+            case "*" -> Expr.Operation.MUL;
+            case "/" -> Expr.Operation.DIV;
+            default -> throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
+        };
+
+        // Kombinujte leve i desne izraze
+        var loc = left.getLocation().span(right.getLocation());
+        return new Expr(loc, exprOp, left, right);
     }
 
     @Override
