@@ -102,6 +102,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     }
 
     @Override
+    public Tree visitCore(SlangParser.CoreContext ctx) {
+        return null;
+    }
     /// FUNKCIJE ZA LOKACIJU
 
 
