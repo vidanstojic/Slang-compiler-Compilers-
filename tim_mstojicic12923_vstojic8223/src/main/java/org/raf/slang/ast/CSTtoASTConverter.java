@@ -141,22 +141,24 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             return visit(ctx.addSubOperands());
         }
 
-        // Posetite levi izraz rekurzivno
         var left = (Expr) visit(ctx.relationalOperands());
         var right = (Expr) visit(ctx.addSubOperands());
 
-        // Pronađite operator
-        var operatorText = ctx.getChild(1).getText(); // Relacijski operator se nalazi na ovom indeksu
-        var exprOp = switch (operatorText) {
-            case ">" -> Expr.Operation.GREATERTHAN;
-            case "<" -> Expr.Operation.LESSTHAN;
-            case ">=" -> Expr.Operation.GREATERTHANOREQ;
-            case "<=" -> Expr.Operation.LESSTHANOREQ;
-            case "==" -> Expr.Operation.EQUALTO;
-            default -> throw new IllegalArgumentException("Nepoznati relacijski operator: " + operatorText);
-        };
+        var operatorText = ctx.getChild(1).getText();
+        Expr.Operation exprOp;
+        if(operatorText == ">")
+            exprOp = Expr.Operation.GREATERTHAN;
+        else if(operatorText == "<")
+            exprOp = Expr.Operation.LESSTHAN;
+        else if (operatorText == ">=")
+            exprOp = Expr.Operation.GREATERTHANOREQ;
+        else if(operatorText == "<=")
+            exprOp = Expr.Operation.LESSTHANOREQ;
+        else if(operatorText == "==")
+            exprOp = Expr.Operation.EQUALTO;
+        else
+            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
 
-        // Kombinujte leve i desne izraze
         var loc = left.getLocation().span(right.getLocation());
         return new Expr(loc, exprOp, left, right);
     }
@@ -167,19 +169,18 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             return visit(ctx.mulDivOperands());
         }
 
-        // Posetite levi izraz rekurzivno
         var left = (Expr) visit(ctx.addSubOperands());
         var right = (Expr) visit(ctx.mulDivOperands());
 
-        // Pronađite operator
-        var operatorText = ctx.getChild(1).getText(); // Ovaj indeks može zavisiti od strukture stabla
-        var exprOp = switch (operatorText) {
-            case "+" -> Expr.Operation.ADD;
-            case "-" -> Expr.Operation.SUB;
-            default -> throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
-        };
+        var operatorText = ctx.getChild(1).getText();
+        Expr.Operation exprOp;
+        if(operatorText == "+")
+            exprOp = Expr.Operation.ADD;
+        else if(operatorText == "-")
+            exprOp = Expr.Operation.SUB;
+        else
+            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
 
-        // Kombinujte leve i desne izraze
         var loc = left.getLocation().span(right.getLocation());
         return new Expr(loc, exprOp, left, right);
     }
@@ -190,19 +191,18 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             return visit(ctx.core());
         }
 
-        // Posetite levi izraz rekurzivno
         var left = (Expr) visit(ctx.mulDivOperands());
         var right = (Expr) visit(ctx.core());
 
-        // Pronađite operator
-        var operatorText = ctx.getChild(1).getText(); // Ovaj indeks može zavisiti od strukture stabla
-        var exprOp = switch (operatorText) {
-            case "*" -> Expr.Operation.MUL;
-            case "/" -> Expr.Operation.DIV;
-            default -> throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
-        };
+        var operatorText = ctx.getChild(1).getText();
+        Expr.Operation exprOp;
+        if(operatorText == "*")
+            exprOp = Expr.Operation.MUL;
+        else if(operatorText == "/")
+            exprOp = Expr.Operation.DIV;
+        else
+            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
 
-        // Kombinujte leve i desne izraze
         var loc = left.getLocation().span(right.getLocation());
         return new Expr(loc, exprOp, left, right);
     }
