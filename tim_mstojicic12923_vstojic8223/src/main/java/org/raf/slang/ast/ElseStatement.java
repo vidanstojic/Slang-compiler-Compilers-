@@ -14,6 +14,6 @@ public class ElseStatement extends Statement{
 
     @Override
     public void nodePrint(ASTNodePrinter printElseStatement) {
-        printElseStatement.node("else", () -> {printElseStatement.terminal("else"); statementList.forEach(statement -> statement.nodePrint(printElseStatement));});
+        printElseStatement.node("else", () -> statementList.forEach(statement -> statement.nodePrint(printElseStatement)));
     }
 }
