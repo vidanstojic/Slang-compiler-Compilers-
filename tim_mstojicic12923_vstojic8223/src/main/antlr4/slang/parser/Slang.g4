@@ -25,7 +25,7 @@ simpleStatement
     ;
 
 ifStatement
-    : IF_KEYWORD '(' expr('<' | '>' | '<=' | '>=' | '==') expr ')' '{'(statement)* '}'
+    : IF_KEYWORD '(' expr('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr ')' '{'(statement)* '}'
     ;
 
 elseStatement
@@ -34,8 +34,8 @@ elseStatement
 
 
 loopStatement
-    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' | '<=' | '>=') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
-    | WHILE_KEYWORD '(' ID ('<' | '>' | '<=' | '>=') expr  ')''{' (statement)* '}'
+    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' | '<=' | '>=' | '&&' | '||') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
+    | WHILE_KEYWORD '(' ID ('<' | '>' | '<=' | '>='| '&&' | '||') expr  ')''{' (statement)* '}'
     ;
 
 
