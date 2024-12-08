@@ -4,13 +4,79 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import slang.parser.SlangLexer;
+import org.raf.slang.Slang;
 import slang.parser.SlangParser;
 import slang.parser.SlangVisitor;
 
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements SlangVisitor<Tree> {
+    private Slang slang;
+
+
+    public CSTtoASTConverter(Slang slang) {
+        this.slang = slang;
+        /* Open the global scope.  */
+        openBlock();
+    }
+
+    /* A stack of environments.  */
+    private List<Map<String, Statement>> environments = new ArrayList<>();
+    /** Open a new scope. */
+    private void openBlock() {
+        environments.add(new HashMap<>());
+    }
+
+    /** Removes the last scope. */
+    private void closeBlock() {
+        environments.removeLast();
+    }
+
+    /** Saves a declaration into the current environment, diagnosing
+     redeclaration. */
+    private void pushStatement(String name, Statement statement) {
+        /* Intentionally overwriting the old variable as error recovery.  */
+        // Ovde je potrebno da proverimo od cega je instanca statement i da ako je print i scan da to preskocimo i ne stavimo na stek
+        Statement oldDecl = null;
+        if(statement instanceof SimpleStatement) {
+            oldDecl = environments.getLast().put(name, statement);
+        }
+        else if(statement instanceof FunctionDefinition){
+            oldDecl = environments.getLast().put(name, statement);
+        }
+        else if(statement instanceof IfStatement){
+            oldDecl = environments.getLast().put(name, statement);
+        }
+        else if(statement instanceof ElseStatement){
+            oldDecl = environments.getLast().put(name, statement);
+        }
+        else if(statement instanceof LoopStatement){
+            oldDecl = environments.getLast().put(name, statement);
+        }
+
+        if (oldDecl != null) {
+            slang.error(statement.getLocation(), "");
+        }
+    }
+    /** Tries to find a declaration in any scope parent to this one..  */
+    private Optional<Statement> lookup(Location loc, String name) {
+        /* Walk through the scope, starting at the top one, ... */
+        for (var block : environments.reversed()) {
+            /* ... for each of them, try to find the name we're looking for in
+               the environment... */
+            var decl = block.get(name);
+            if (decl != null) {
+                /* ... and if it is found, return it....  */
+                return Optional.of(decl);
+            }
+        }
+        /* ... otherwise, we fell through and found nothing.  Diagnose and
+           continue.  */
+        slang.error(loc, "failed to find variable '%s' in current scope", name);
+        return Optional.empty();
+    }
+
     @Override
     public Tree visitStart(SlangParser.StartContext ctx) {
         var stmts = ctx.statement()
@@ -35,20 +101,25 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
            different rules, with its first child being whatever the statement
            actually is, and the rest, if any, are unimportant.  */
         var substatement = visit(ctx.getChild(0));
-
         return (Statement) substatement;
     }
 
     @Override
     public Tree visitSimpleStatement(SlangParser.SimpleStatementContext ctx) {
         var name = ctx.ID().getText();
-        var value = (Expr) visit(ctx.expr(0));
-        return new SimpleStatement(getLocation(ctx), name, value);
+        Expr value = null;
+        if (ctx.expr(0) != null) {
+            value = (Expr) visit(ctx.expr(0));
+        }
+        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value);
+        pushStatement(name, simpleStatement);
+        return simpleStatement;
     }
 
 
     @Override
     public Tree visitIfStatement(SlangParser.IfStatementContext ctx) {
+        openBlock();
         var exprList = ctx.expr()
                 /* Take all the parsed arguments, ... */
                 .stream()
@@ -63,23 +134,26 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
-
+        closeBlock();
         return new IfStatement(getLocation(ctx), exprList, statementList);
     }
 
     @Override
     public Tree visitElseStatement(SlangParser.ElseStatementContext ctx) {
+        openBlock();
        // ctx.statement().forEach(this::visit);
         var statementList = ctx.statement()
                 .stream()
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+        closeBlock();
         return new ElseStatement(getLocation(ctx), statementList);
     }
 
     @Override
     public Tree visitLoopStatement(SlangParser.LoopStatementContext ctx) {
+        openBlock();
         var exprList = ctx.expr()
                 /* Take all the parsed arguments, ... */
                 .stream()
@@ -95,12 +169,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
-
+        closeBlock();
         return new LoopStatement(getLocation(ctx), exprList, statementList);
     }
 
     @Override
     public Tree visitFunctionDefinition(SlangParser.FunctionDefinitionContext ctx) {
+        openBlock();
         var name = ctx.ID().getText();
         var exprList = ctx.expr()
                 /* Take all the parsed arguments, ... */
@@ -116,6 +191,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+        closeBlock();
         return new FunctionDefinition(getLocation(ctx), name, exprList, statementList);
     }
 
@@ -249,8 +325,33 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         }else if(ctx.BOOLEAN_LITERAL()!=null && ctx.getText().equals(ctx.BOOLEAN_LITERAL().toString())){
             return new BoolLiteral(getLocation(ctx), Boolean.parseBoolean(ctx.getText()));
         }else{
-            return new VariableRef(getLocation(ctx), ctx.getText());
+            var loc = getLocation(ctx);
+            return lookup(loc, ctx.ID().getText())
+                    /* ... and if you do find it, make it into an expression, ... */
+                    .map(simpleStatement -> (Tree) new VariableRef(loc, (SimpleStatement) simpleStatement))
+                    /* ... and if you fail, make it an error expression.  */
+                    .orElseGet(() -> new ErrorExpr(loc));
         }
+    }
+
+    @Override
+    public Tree visitBlock(SlangParser.BlockContext ctx) {
+        openBlock();
+
+        var stmts = ctx.statement()
+                /* Take all the parsed statements, ... */
+                .stream()
+                /* ... visit them using this visitor, ... */
+                .map(this::visit)
+                /* ... then cast them to statements (because 'start: statement*',
+                   so they can't be anything else), ...  */
+                .map(x -> (Statement) x)
+                /* ... and put them into a list.  */
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        /* Close the one opened above.  */
+        closeBlock();
+        return new StatementList(getLocation(ctx), stmts);
     }
     /// FUNKCIJE ZA LOKACIJU
 

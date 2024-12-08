@@ -15,6 +15,7 @@ statement
     | scanStatement
     | functionDefinition
     | functionCallStatement
+    | block
     ;
 
 simpleStatement
@@ -82,8 +83,9 @@ mulDivOperands
 core
     : NUMBER_LITERAL
     | BOOLEAN_LITERAL
-    | ID
+    | ID#VariableReference
     ;
+block: '{' statement* '}';
 
 
 // LEKSICKA GRAMATIKA

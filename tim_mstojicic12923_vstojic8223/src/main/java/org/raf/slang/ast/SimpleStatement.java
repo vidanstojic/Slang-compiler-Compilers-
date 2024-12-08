@@ -22,7 +22,9 @@ public class SimpleStatement extends Statement{
     public void nodePrint(ASTNodePrinter pp) {
         pp.node("declaration of %s".formatted(name),
                 () -> {
-                    value.nodePrint(pp);
+                    if (value != null) {
+                        value.nodePrint(pp);
+                    }
                 });
     }
 }

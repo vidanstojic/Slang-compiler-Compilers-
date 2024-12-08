@@ -17,7 +17,12 @@ import java.io.InputStreamReader;
 
 
 public class Main {
+
     private static final Slang slang = new Slang();
+
+    private static final CSTtoASTConverter treeProcessor
+            = new CSTtoASTConverter(slang);
+
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
 
@@ -90,7 +95,7 @@ public class Main {
 
         System.out.println("AST:");
         var pp = new ASTNodePrinter(System.out);
-        var program = (StatementList) tree.accept(new CSTtoASTConverter());
+        var program = (StatementList) tree.accept(treeProcessor);
 
         program.nodePrint(pp);
     }

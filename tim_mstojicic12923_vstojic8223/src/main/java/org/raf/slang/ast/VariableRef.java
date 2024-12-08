@@ -1,18 +1,25 @@
 package org.raf.slang.ast;
 
 
-
+import java.util.Objects;
 
 public class VariableRef extends Expr{
-    String variableName;
+    private SimpleStatement variable;
 
-    public VariableRef(Location location,String variableName) {
+    public VariableRef(Location location,SimpleStatement variable) {
         super(location);
-        this.variableName = variableName;
+        this.variable = variable;
     }
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
-        pp.node("variable", () -> pp.terminal(variableName));
+        pp.node("var", () -> {
+            pp.terminal(variable.getName());
+            pp.terminal("identity: %s"
+                    /* toIdentityString is the default toString, so it
+                       should return a string based on object
+                       identity, i.e. a different one for each decl  */
+                    .formatted(Objects.toIdentityString(variable)));
+        });
     }
 }

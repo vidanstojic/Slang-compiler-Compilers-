@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class StatementList extends Tree{
+public class StatementList extends Statement{
 
     private List<Statement> listOfStatements;
 
