@@ -40,6 +40,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         } catch (NumberFormatException e) {
             return false; // Nije broj
         }
+    }
     public void firstOpen(){
         openBlock();
     }
@@ -157,10 +158,14 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             if(foundSimpleStatement == null) {
                 slang.error(simpleStatement.getLocation(), "variable "+ simpleStatement.getName() + " does not have a type");
             }
-            else pushStatement(name, simpleStatement);
+            else{
+                //moze da se ispravi da se ne azurira vrednost
+                foundSimpleStatement.setValue(simpleStatement.getValue());
+                simpleStatement = foundSimpleStatement;
+            }
         }
         else
-         pushStatement(name, simpleStatement);
+            pushStatement(name, simpleStatement);
 
         return simpleStatement;
     }
@@ -220,7 +225,14 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         if (ctx.expr(0) != null) {
             value = (Expr) visit(ctx.expr(0));
         }
-        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value);
+      //  VariableType type = new VariableType(getLocation(ctx), "null");
+        VariableType type = null;
+        if (ctx.children.toString().contains("numero") || ctx.children.toString().contains("yeahNah"))
+            type = new VariableType(getLocation(ctx), ctx.children.get(2).toString());
+        else
+            new VariableType(getLocation(ctx), "null");
+       //     type.setTypeName(ctx.children.get(2).toString());
+        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
         pushStatement(name, simpleStatement);
         var exprList = ctx.expr()
                 /* Take all the parsed arguments, ... */
@@ -336,7 +348,8 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     @Override
     public Tree visitScanStatement(SlangParser.ScanStatementContext ctx) {
-        var arguments = ctx.ID().getText();
+        var arguments = ctx.expr().getText();
+        lookup(getLocation(ctx), arguments);
         return new ScanStatement(getLocation(ctx), arguments);
     }
 
@@ -349,10 +362,15 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             var loc = subexpr.getLocation().span(subexpr.getLocation());
             return new Expr(loc, subexpr, exprOp);
         }
-        var left = (Expr) visit(ctx.relationalOperands());
 
+        if (exprOp == null){
 
-        var loc = left.getLocation().span(subexpr.getLocation());
+            return subexpr;
+        }else {
+            var left = (Expr) visit(ctx.relationalOperands());
+
+            var loc = left.getLocation().span(subexpr.getLocation());
+        }
         return subexpr;
     }
 

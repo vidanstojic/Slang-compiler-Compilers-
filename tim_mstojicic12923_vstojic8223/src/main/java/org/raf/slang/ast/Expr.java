@@ -3,12 +3,14 @@ package org.raf.slang.ast;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Objects;
 
 @Getter
 @Setter
 @EqualsAndHashCode
+@ToString
 public class Expr extends Tree{
 
     public enum Operation {

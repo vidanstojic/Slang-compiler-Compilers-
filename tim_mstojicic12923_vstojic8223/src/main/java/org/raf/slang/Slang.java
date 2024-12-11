@@ -60,9 +60,23 @@ public class Slang {
  *
  * TESTOVI ZA SPIN I REPLAY(ZA FOR I WHILE)
  * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan = vidan - i;}}
+ * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan = vidan - marko;}}
+ * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan =  marko;}}
+ * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan = vidan - y;}} baca gresku ne nalazi y
  *
  * TESTOVI ZA CHECK I BACKUP
+ * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan =  marko;}backup{marko = vidan;}}
+ * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan =  marko;}backup{marko = i;}} ne nalazi i
  *
+ * TESTOVI ZA DROPMSG
+ * dropmsg(marko); ne nalazi marka
+ * numero marko = 5; dropmsg(marko);
+ *
+ * TESTOVI ZA GRABMSG
+ * grabmsg(vidan); ne nalazi vidana
+ * numero vidan; grabmsg(vidan);
+ *
+ * TESTOVI ZA CALLFANC
  *
  * */
 

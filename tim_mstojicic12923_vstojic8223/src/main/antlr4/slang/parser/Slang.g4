@@ -59,7 +59,7 @@ printStatement
     ;
 
 scanStatement
-    : SCAN_KEYWORD '('ID')'';'
+    : SCAN_KEYWORD '('expr')'';'
     ;
 
 expr
