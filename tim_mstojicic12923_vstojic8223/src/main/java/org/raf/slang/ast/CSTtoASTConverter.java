@@ -32,6 +32,14 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     private void closeBlock() {
         environments.removeLast();
     }
+    public boolean isNumber(String str) {
+        try {
+            Double.parseDouble(str); // Za decimalne brojeve
+            return true;
+        } catch (NumberFormatException e) {
+            return false; // Nije broj
+        }
+    }
 
     /** Saves a declaration into the current environment, diagnosing
      redeclaration. */
@@ -250,7 +258,8 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .toList();
 
         var dataForReturn = ctx.ID().getLast().getText();
-        if(dataForReturn != null){
+        System.out.println("Returned data: " + dataForReturn);
+        if(dataForReturn != null && (dataForReturn != "true" && dataForReturn != "false" && !isNumber(dataForReturn))  && !dataForReturn.equals(name)   ){
             SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
             if(foundSimpleStatement == null) slang.error(getLocation(ctx), "returned variable doesn not exist");
         }
@@ -260,6 +269,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         closeBlock();
         return function;
     }
+
 
     @Override
     public Tree visitFunctionParameter(SlangParser.FunctionParameterContext ctx) {
@@ -407,7 +417,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             var loc = getLocation(ctx);
 
             String variableName = ctx.ID().getText();
-            System.out.println("USAOOO U VISIT CORE - VARIABLE REF "+ variableName);
+
             return lookup(loc, variableName)
                     .map(simpleStatement -> {
                         if (simpleStatement instanceof SimpleStatement variable) {

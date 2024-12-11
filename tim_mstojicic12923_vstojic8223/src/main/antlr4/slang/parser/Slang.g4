@@ -43,7 +43,7 @@ loopStatement
 
 
 functionDefinition
-    :  FUNCTION_KEYWORD ID '(' (functionParameter? (',' functionParameter)*?) ')' '{' (statement)* RETURN_KEYWORD (ID | VOID_KEYWORD | NUMBER_LITERAL | BOOLEAN_LITERAL) ';' '}' // ispraviti da budu tipovi za argumente
+    :  FUNCTION_KEYWORD ID '(' (functionParameter? (',' functionParameter)*?) ')' '{' (statement)* RETURN_KEYWORD (VOID_KEYWORD | NUMBER_LITERAL | BOOLEAN_LITERAL | ID) ';' '}' // ispraviti da budu tipovi za argumente
     ;
 
 functionParameter
