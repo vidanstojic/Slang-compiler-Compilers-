@@ -34,7 +34,7 @@ public class Main {
         System.out.print("Choose your option: ");
         int answer = scanner.nextInt();
         if (answer == 2) {
-            System.out.print("Write your file path: ");
+            System.out.print("Write your file path(src\\main\\java\\org\\raf\\slang\\resources\\test.txt): ");
             String path = scanner.next();
             runFile(path);
         } else {

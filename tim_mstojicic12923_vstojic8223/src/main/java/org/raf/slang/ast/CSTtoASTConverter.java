@@ -263,8 +263,17 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
             if(foundSimpleStatement == null) slang.error(getLocation(ctx), "returned variable doesn not exist");
         }
-
-        var function = new FunctionDefinition(getLocation(ctx), name, parameterList, statementList);
+        var functionReturnType = ctx.variableType();
+        String textReturnType = "";
+        if(functionReturnType == null){
+            var emptyReturn = ctx.VOID_KEYWORD().getFirst();
+            if(emptyReturn == null){
+                slang.error(getLocation(ctx), "function does not have return type");
+            }
+            else textReturnType = emptyReturn.getText();
+        }
+        else textReturnType = functionReturnType.getText();
+        var function = new FunctionDefinition(getLocation(ctx), name,textReturnType ,parameterList, statementList);
 
         closeBlock();
         return function;

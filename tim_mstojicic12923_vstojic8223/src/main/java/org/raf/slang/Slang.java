@@ -51,3 +51,20 @@ public class Slang {
     }
 
 }
+/**  SCOPE CHECKING
+ * TESTOVI ZA FUNKCIJE
+ *  action numero proba(numero broj1, numero broj2){ numero primer = broj1; numero i; replay(primer > broj2){i = broj1;} getback i;}  - ne treba da baci error
+ *  action numero proba(numero broj1, numero broj2){ numero primer = broj1; replay(primer > broj2){i = broj1;} getback i;} - baca error jer ne vidi i
+ *  action numero proba(numero broj1, numero broj2){ numero primer = broj1; replay(primer > broj2){} getback broj1;}  - ne treba da baci error
+ *  action numero proba(numero broj1, numero broj2){ numero primer = broj1; replay(primer > broj2){} getback nePostojecaVarijabla;} - treba da baci error
+ *
+ * TESTOVI ZA SPIN I REPLAY(ZA FOR I WHILE)
+ * numero broj = 5;check(broj > 2){broj = broj +1;}numero vidan = 1; numero marko = 0; check(vidan>marko){spin(numero i = 0;vidan > 0; i + 1){vidan = vidan - i;}}
+ *
+ * TESTOVI ZA CHECK I BACKUP
+ *
+ *
+ * */
+
+
+
