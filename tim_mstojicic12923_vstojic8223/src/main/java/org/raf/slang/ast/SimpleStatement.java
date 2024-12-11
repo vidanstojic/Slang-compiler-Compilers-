@@ -36,4 +36,14 @@ public class SimpleStatement extends Statement{
                     }
                 });
     }
+
+    @Override
+    public String toString() {
+        return "declaration of variable(simple statement){" +
+                "name='" + name + '\'' +
+                ", value=" + value +
+                ", type=" + type +
+                '}';
+    }
 }
+// action proba(numero broj1, numero broj2){ numero sisa = broj1; getback sisa;}

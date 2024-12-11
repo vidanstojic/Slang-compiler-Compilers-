@@ -87,7 +87,7 @@ mulDivOperands
 core
     : NUMBER_LITERAL
     | BOOLEAN_LITERAL
-    | ID#VariableReference
+    | ID
     ;
 block: '{' statement* '}';
 

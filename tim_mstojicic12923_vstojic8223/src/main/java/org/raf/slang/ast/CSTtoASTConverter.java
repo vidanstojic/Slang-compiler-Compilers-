@@ -62,6 +62,24 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             slang.error(statement.getLocation(), "");
         }
     }
+    /**Prolazi kroz envirionments i trazi da li ima neki simpleStatement sa istim imenom*/
+    public SimpleStatement findSimpleStatement(String name) {
+        for (Map<String, Statement> environment : environments) {
+            for (Map.Entry<String, Statement> entry : environment.entrySet()) {
+                Statement statement = entry.getValue();
+                if (statement instanceof SimpleStatement) {
+                    SimpleStatement simpleStatement = (SimpleStatement) statement;
+                    if (simpleStatement.getName().equals(name)) {
+                        return simpleStatement; // Pronađeno, vraćamo true
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+
     /** Tries to find a declaration in any scope parent to this one..  */
     private Optional<Statement> lookup(Location loc, String name) {
         /* Walk through the scope, starting at the top one, ... */
@@ -118,9 +136,17 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         if (ctx.variableType() != null) {
             type = (VariableType) visit(ctx.variableType());
         }
-        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
 
-        pushStatement(name, simpleStatement);
+        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
+        if(type == null) {
+            SimpleStatement foundSimpleStatement = findSimpleStatement(simpleStatement.getName());
+            if(foundSimpleStatement == null) {
+                slang.error(simpleStatement.getLocation(), "variable "+ simpleStatement.getName() + " does not have a type");
+            }
+            else pushStatement(name, simpleStatement);
+        }
+        else
+         pushStatement(name, simpleStatement);
 
         return simpleStatement;
     }
@@ -209,6 +235,14 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (FunctionParameter) x)
                 /* ... and put them into a list.  */
                 .toList();
+        // Dodavanje parametara u trenutni opseg
+        for (var param : parameterList) {
+            var paramName = param.getParamName();
+            var paramStatement = new SimpleStatement(
+                    param.getLocation(), paramName, null, param.getType()
+            );
+            pushStatement(paramName, paramStatement);
+        }
         var statementList = ctx.statement()
                 .stream()
                 .map(this::visit)
@@ -224,7 +258,6 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public Tree visitFunctionParameter(SlangParser.FunctionParameterContext ctx) {
         // Dobijanje imena parametra
         String paramName = ctx.ID().getText();
-        System.out.println("ULAAAZI ODJEEEE");
         // Dobijanje tipa ako postoji
         VariableType type = null;
         if (ctx.variableType() != null) {
@@ -367,12 +400,16 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             var loc = getLocation(ctx);
 
             String variableName = ctx.ID().getText();
+            System.out.println("USAOOO U VISIT CORE - VARIABLE REF "+ variableName);
             return lookup(loc, variableName)
                     .map(simpleStatement -> {
                         if (simpleStatement instanceof SimpleStatement variable) {
-                            if (!variable.hasType()) {
+                            //slang.error(variable.getLocation(), "variable does not have a type");
+                            SimpleStatement foundSimpleStatement = findSimpleStatement(((SimpleStatement) simpleStatement).getName());
+                            if (foundSimpleStatement == null || (foundSimpleStatement.getType() == null)) {
                                 slang.error(variable.getLocation(), "variable does not have a type");
                             }
+
                             return (Tree) new VariableRef(loc, variable);
                         }
                         throw new RuntimeException("Invalid reference to non-simple statement: " + variableName);
@@ -435,3 +472,4 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         return new Location (start, end);
     }
 }
+// action proba(numero broj1, numero broj2){ sisa = broj1; getback sisa;}
