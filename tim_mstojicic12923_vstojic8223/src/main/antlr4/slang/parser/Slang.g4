@@ -17,15 +17,15 @@ statement
     | functionCallStatement
     | block
     ;
-
 simpleStatement
-    : NUMBER_KEYWORD ID ('=' expr)? ';'
-    | BOOLEAN_KEYWORD ID ('=' expr)? ';'
+    : variableType ID ('=' expr)? ';'
     | ID '=' expr ';'
     | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
     ;
-
-
+variableType
+    : NUMBER_KEYWORD
+    | BOOLEAN_KEYWORD
+    ;
 ifStatement
     : IF_KEYWORD '(' (('!' expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'
     ;
@@ -43,7 +43,11 @@ loopStatement
 
 
 functionDefinition
-    :  FUNCTION_KEYWORD ID '(' (expr? (',' expr)*?) ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}' // ispraviti da budu tipovi za argumente
+    :  FUNCTION_KEYWORD ID '(' (functionParameter? (',' functionParameter)*?) ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}' // ispraviti da budu tipovi za argumente
+    ;
+
+functionParameter
+    : variableType ID
     ;
 
 functionCallStatement

@@ -38,6 +38,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     private void pushStatement(String name, Statement statement) {
         /* Intentionally overwriting the old variable as error recovery.  */
         // Ovde je potrebno da proverimo od cega je instanca statement i da ako je print i scan da to preskocimo i ne stavimo na stek
+//        if (environments.getLast().containsKey(name)) {
+//            slang.error(statement.getLocation(), "Variable '%s' already declared in this scope", name);
+//        }
         Statement oldDecl = null;
         if(statement instanceof SimpleStatement) {
             oldDecl = environments.getLast().put(name, statement);
@@ -111,33 +114,47 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         if (ctx.expr(0) != null) {
             value = (Expr) visit(ctx.expr(0));
         }
-        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value);
+        VariableType type = null;
+        if (ctx.variableType() != null) {
+            type = (VariableType) visit(ctx.variableType());
+        }
+        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
+
         pushStatement(name, simpleStatement);
+
         return simpleStatement;
+    }
+
+    @Override
+    public Tree visitVariableType(SlangParser.VariableTypeContext ctx) {
+        // Pretpostavljamo da ctx.getText() vraća naziv tipa kao string
+        String typeName = ctx.getText();
+        return new VariableType(getLocation(ctx), typeName);
     }
 
 
     @Override
     public Tree visitIfStatement(SlangParser.IfStatementContext ctx) {
         openBlock();
+
         var exprList = ctx.expr()
-                /* Take all the parsed arguments, ... */
                 .stream()
-                /* ... visit them using this visitor, ... */
                 .map(this::visit)
-                /* ... then cast them to expressions, ...  */
                 .map(x -> (Expr) x)
-                /* ... and put them into a list.  */
                 .toList();
+
         var statementList = ctx.statement()
                 .stream()
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
-        closeBlock();
-        return new IfStatement(getLocation(ctx), exprList, statementList);
-    }
 
+        var ifStatement = new IfStatement(getLocation(ctx), exprList, statementList);
+
+
+        closeBlock();
+        return ifStatement;
+    }
     @Override
     public Tree visitElseStatement(SlangParser.ElseStatementContext ctx) {
         openBlock();
@@ -147,8 +164,12 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+
+
+        var elseStatement = new ElseStatement(getLocation(ctx), statementList);
+
         closeBlock();
-        return new ElseStatement(getLocation(ctx), statementList);
+        return elseStatement;
     }
 
     @Override
@@ -169,21 +190,23 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+
+        var loopStatement = new LoopStatement(getLocation(ctx), exprList, statementList);
         closeBlock();
-        return new LoopStatement(getLocation(ctx), exprList, statementList);
+        return loopStatement;
     }
 
     @Override
     public Tree visitFunctionDefinition(SlangParser.FunctionDefinitionContext ctx) {
         openBlock();
         var name = ctx.ID().getText();
-        var exprList = ctx.expr()
+        var parameterList = ctx.functionParameter()
                 /* Take all the parsed arguments, ... */
                 .stream()
                 /* ... visit them using this visitor, ... */
                 .map(this::visit)
                 /* ... then cast them to expressions, ...  */
-                .map(x -> (Expr) x)
+                .map(x -> (FunctionParameter) x)
                 /* ... and put them into a list.  */
                 .toList();
         var statementList = ctx.statement()
@@ -191,8 +214,24 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+        var function = new FunctionDefinition(getLocation(ctx), name, parameterList, statementList);
+
         closeBlock();
-        return new FunctionDefinition(getLocation(ctx), name, exprList, statementList);
+        return function;
+    }
+
+    @Override
+    public Tree visitFunctionParameter(SlangParser.FunctionParameterContext ctx) {
+        // Dobijanje imena parametra
+        String paramName = ctx.ID().getText();
+        System.out.println("ULAAAZI ODJEEEE");
+        // Dobijanje tipa ako postoji
+        VariableType type = null;
+        if (ctx.variableType() != null) {
+            type = (VariableType) visit(ctx.variableType());
+        }
+
+        return new FunctionParameter(getLocation(ctx), paramName, type);
     }
 
     @Override
@@ -324,13 +363,25 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             return new NumberLiteral(getLocation(ctx), Double.parseDouble(ctx.getText()));
         }else if(ctx.BOOLEAN_LITERAL()!=null && ctx.getText().equals(ctx.BOOLEAN_LITERAL().toString())){
             return new BoolLiteral(getLocation(ctx), Boolean.parseBoolean(ctx.getText()));
-        }else{
+        }else {
             var loc = getLocation(ctx);
-            return lookup(loc, ctx.ID().getText())
-                    /* ... and if you do find it, make it into an expression, ... */
-                    .map(simpleStatement -> (Tree) new VariableRef(loc, (SimpleStatement) simpleStatement))
-                    /* ... and if you fail, make it an error expression.  */
+
+            String variableName = ctx.ID().getText();
+            return lookup(loc, variableName)
+                    .map(simpleStatement -> {
+                        if (simpleStatement instanceof SimpleStatement variable) {
+                            if (!variable.hasType()) {
+                                slang.error(variable.getLocation(), "variable does not have a type");
+                            }
+                            return (Tree) new VariableRef(loc, variable);
+                        }
+                        throw new RuntimeException("Invalid reference to non-simple statement: " + variableName);
+                    })
                     .orElseGet(() -> new ErrorExpr(loc));
+
+
+
+
         }
     }
 

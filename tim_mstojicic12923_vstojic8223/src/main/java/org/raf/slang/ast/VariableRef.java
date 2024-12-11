@@ -9,12 +9,14 @@ public class VariableRef extends Expr{
     public VariableRef(Location location,SimpleStatement variable) {
         super(location);
         this.variable = variable;
+
     }
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
-        pp.node("var", () -> {
+        pp.node("variable", () -> {
             pp.terminal(variable.getName());
+            pp.terminal(variable.toString());
             pp.terminal("identity: %s"
                     /* toIdentityString is the default toString, so it
                        should return a string based on object
