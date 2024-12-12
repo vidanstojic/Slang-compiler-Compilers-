@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class ArrayLiteral extends Statement{
+public class ArrayLiteral extends Expr{
 
     private String name;
     private List<Expr> elements;

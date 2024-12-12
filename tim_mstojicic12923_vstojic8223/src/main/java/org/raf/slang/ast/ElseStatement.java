@@ -3,7 +3,7 @@ package org.raf.slang.ast;
 import java.util.List;
 import java.util.Objects;
 
-public class ElseStatement extends Statement{
+public final class ElseStatement extends Statement{
 
     private List<Statement> statementList;
 

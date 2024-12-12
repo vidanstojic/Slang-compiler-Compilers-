@@ -3,7 +3,7 @@ package org.raf.slang.ast;
 import java.util.List;
 import java.util.Objects;
 
-public class ScanStatement extends Statement {
+public final class ScanStatement extends Statement {
 
     //private List<Expr> arguments;
     private String name;

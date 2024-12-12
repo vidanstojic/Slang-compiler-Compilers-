@@ -2,7 +2,7 @@ package org.raf.slang.ast;
 
 import java.util.List;
 
-public class IfStatement extends Statement{
+public final class IfStatement extends Statement{
 
     private List<Expr>exprList;
     private List<Statement> statementList;

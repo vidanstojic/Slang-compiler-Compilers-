@@ -1,6 +1,10 @@
 package org.raf.slang.ast;
 
-public abstract class Statement extends Tree {
+
+/** Base class for all statements.  */
+public sealed abstract class Statement extends Tree
+        permits SimpleStatement,IfStatement,ElseStatement,LoopStatement,PrintStatement,ScanStatement,FunctionDefinition
+        ,FunctionCallStatement, StatementList {
     public Statement(Location location) {
         super(location);
     }

@@ -2,7 +2,7 @@ package org.raf.slang.ast;
 
 import java.util.List;
 
-public class LoopStatement extends Statement{
+public final class LoopStatement extends Statement{
 
     private List<Expr> exprList;
     private List<Statement> statementList;

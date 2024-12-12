@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class SimpleStatement extends Statement{
+public final class SimpleStatement extends Statement{
 
     private String name;
     private Expr value;

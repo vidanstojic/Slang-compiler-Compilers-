@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.util.List;
 @Getter
 @Setter
-public class FunctionCallStatement extends Statement{
+public final class FunctionCallStatement extends Statement{
 
     private String name;
     private List<Expr> arguments;

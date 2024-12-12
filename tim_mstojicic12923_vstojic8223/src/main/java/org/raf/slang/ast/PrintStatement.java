@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 @Getter
 @EqualsAndHashCode
-public class PrintStatement extends Statement{
+public final class PrintStatement extends Statement{
     private List<Expr> arguments;
     public PrintStatement(Location location, List<Expr> arguments) {
         super(location);
