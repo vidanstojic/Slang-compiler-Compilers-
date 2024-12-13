@@ -20,11 +20,13 @@ statement
 simpleStatement
     : variableType ID ('=' expr)? ';'
     | ID '=' expr ';'
-    | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
     ;
 variableType
     : NUMBER_KEYWORD
     | BOOLEAN_KEYWORD
+    | VOID_KEYWORD
+    | ARRAY_KEYWORD NUMBER_KEYWORD '[' NUMBER_LITERAL']'
+    // eventualno dodati ovde i ARRAY
     ;
 ifStatement
     : IF_KEYWORD '(' (('!' expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'

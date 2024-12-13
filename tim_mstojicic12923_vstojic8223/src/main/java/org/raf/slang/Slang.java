@@ -7,8 +7,10 @@ import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
-import org.raf.slang.ast.Location;
-import org.raf.slang.ast.Position;
+import org.raf.slang.ast.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -48,6 +50,15 @@ public class Slang {
         System.err.printf ("error: %d:%d: %s\n", p.line(), p.column(),
                 message.formatted(args));
         setHadError(true);
+    }
+
+    /* Type handling.  */
+    private final NumberType numberType = new NumberType(null, "number");// ispraviti ovo null
+    private final VoidType voidType = new VoidType(null, "void");
+    @Getter(AccessLevel.NONE)
+    private final Map<VariableType, ListType> listTypes = new HashMap<>();
+    public VariableType listOfType(VariableType elementType) {
+        return listTypes.computeIfAbsent(elementType, ListType::new).getVariableType();
     }
 
 }

@@ -1,8 +1,12 @@
 package org.raf.slang.ast;
 
 
-import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.Objects;
+@Getter
+@Setter
 public class VariableRef extends Expr{
     private SimpleStatement variable;
 

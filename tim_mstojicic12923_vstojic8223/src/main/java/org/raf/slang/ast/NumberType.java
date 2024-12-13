@@ -5,14 +5,13 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class NumberType implements Type {
-    private Type type;
-    public NumberType(Type type) {
-        this.type = type;
+public class NumberType extends VariableType {
+
+
+    public NumberType(Location loc, String typeName) {
+        super(loc, typeName);
     }
 
-
-    @Override
     public String userReadableName() {
         return "number";
     }

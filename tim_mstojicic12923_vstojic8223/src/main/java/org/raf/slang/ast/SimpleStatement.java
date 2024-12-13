@@ -12,7 +12,7 @@ public final class SimpleStatement extends Statement{
     private String name;
     private Expr value;
     private VariableType type;
-    private Type declaredType;
+
 
 
     public SimpleStatement(Location location, String name, Expr value, VariableType type) {

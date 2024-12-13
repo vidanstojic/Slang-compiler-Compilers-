@@ -5,15 +5,16 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ArrayType implements Type{
-    private Type type;
-    public ArrayType(Type type) {
-        this.type = type;
+public class ArrayType extends VariableType{
+
+
+    public ArrayType(Location loc, String typeName) {
+        super(loc, typeName);
     }
+
 
     @Override
     public String userReadableName() {
-        /* number[] for instance.  */
-        return type.userReadableName() + "[]";
+        return "number array";
     }
 }

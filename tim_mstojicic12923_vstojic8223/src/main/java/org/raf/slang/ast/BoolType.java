@@ -5,14 +5,13 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BoolType implements Type{
-    private Type type;
-    public BoolType(Type type) {
-        this.type = type;
+public class BoolType extends VariableType{
+
+    public BoolType(Location loc, String typeName) {
+        super(loc, typeName);
     }
 
 
-    @Override
     public String userReadableName() {
         return "boolean";
     }

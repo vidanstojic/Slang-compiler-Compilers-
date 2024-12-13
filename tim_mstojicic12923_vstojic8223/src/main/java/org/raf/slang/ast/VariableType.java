@@ -6,14 +6,16 @@ import lombok.ToString;
 
 @Getter
 @Setter
-public class VariableType extends Tree{
+public abstract class VariableType extends Tree{
 
     private final String typeName;
+    private VariableType variableType;
 
     public VariableType (Location loc, String typeName) {
         super(loc);
         this.typeName = typeName;
     }
+
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
@@ -26,5 +28,7 @@ public class VariableType extends Tree{
                 "typeName='" + typeName + '\'' +
                 ')';
     }
+
+    public abstract String userReadableName();
 }
 // action proba(numero broj1, numero broj2){getback empty;}

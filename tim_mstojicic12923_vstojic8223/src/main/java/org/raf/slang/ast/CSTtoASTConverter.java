@@ -3,7 +3,6 @@ package org.raf.slang.ast;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.raf.slang.Slang;
 import slang.parser.SlangParser;
@@ -156,14 +155,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public Tree visitSimpleStatement(SlangParser.SimpleStatementContext ctx) {
         var name = ctx.ID().getText();
         Expr value = null;
-        if (ctx.expr(0) != null) {
-            value = (Expr) visit(ctx.expr(0));
+        if (ctx.expr() != null) {// vratiti 0 u expr ako je potrebno
+            value = (Expr) visit(ctx.expr());
         }
         VariableType type = null;
         if (ctx.variableType() != null) {
             type = (VariableType) visit(ctx.variableType());
         }
-
         var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
         if(type == null) {
             SimpleStatement foundSimpleStatement = findSimpleStatement(simpleStatement.getName());
@@ -186,7 +184,23 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public Tree visitVariableType(SlangParser.VariableTypeContext ctx) {
         // Pretpostavljamo da ctx.getText() vraća naziv tipa kao string
         String typeName = ctx.getText();
-        return new VariableType(getLocation(ctx), typeName);
+        if(typeName.equals("empty")){
+            return new VoidType(getLocation(ctx), typeName);
+        }
+        else if(typeName.equals("numero")){
+            return new NumberType(getLocation(ctx), typeName);
+        }
+        else if(typeName.equals("yeahNah")){
+            return new BoolType(getLocation(ctx), typeName);
+        }
+        else if(typeName.equals("squad numero[]")){// PROVERITI DA LI JE OVDE POTREBNO NESTO STAVITI IZMEDJU ZAGRADA
+            return new ArrayType(getLocation(ctx), typeName);
+        }
+        else{
+            slang.error(getLocation(ctx), "type is not valid");
+            return null;
+        }
+
     }
 
 
@@ -239,10 +253,10 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         }
       //  VariableType type = new VariableType(getLocation(ctx), "null");
         VariableType type = null;
-        if (ctx.children.toString().contains("numero") || ctx.children.toString().contains("yeahNah"))
-            type = new VariableType(getLocation(ctx), ctx.children.get(2).toString());
+        if (ctx.children.toString().contains("numero"))
+            type = new NumberType(getLocation(ctx), ctx.children.get(2).toString());
         else
-            new VariableType(getLocation(ctx), "null");
+            new VoidType(getLocation(ctx), "null");
        //     type.setTypeName(ctx.children.get(2).toString());
         var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
         pushStatement(name, simpleStatement);

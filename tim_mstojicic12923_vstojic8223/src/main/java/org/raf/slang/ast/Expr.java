@@ -47,7 +47,7 @@ public class Expr extends Tree{
     private Expr lhs;
     private Expr rhs;
 
-    private Type resultType;
+    private VariableType resultType;
 
     public Expr(Location location, Operation operation, Expr lhs, Expr rhs) {
         super(location);
