@@ -27,15 +27,22 @@ public class TypeCheck {
             as the type of the right-hand side.  This is type deduction.*/
                 var type = stmt.getType();
                 //
-                var newValue = typecheck(stmt.getValue());
-                stmt.setValue(tryAndConvert(stmt.getType(),stmt.getValue()));
+                Expr newValue;
+                if (typecheck(stmt.getValue()) != null){
+                    newValue = stmt.getValue();
+                    stmt.setValue(tryAndConvert(stmt.getType(),newValue));
+                    stmt.setType(newValue.getResultType());//proveriti da li je ovo tacno
+                }
+
+
                 //stmt.setValue(newValue);
-                stmt.setType(newValue.getResultType());
+
             }
             case IfStatement stmt -> {
                 var exprList = stmt.getExprList();
                 var variable = exprList.get(0);
                 for (Expr expr: exprList){
+                    expr = typecheck(expr);
                     typecheck(expr);
                     System.out.println(expr);
                 }
@@ -45,7 +52,6 @@ public class TypeCheck {
                 List<Statement> listOfStatements = stmt.getStatementList();
                 StatementList statementList = new StatementList(stmt.getLocation(),listOfStatements);
                 typecheck(statementList);
-                System.out.println("kkk");
             }
             case ElseStatement stmt -> {
                 List<Statement> listOfStatements = stmt.getStatementList();
@@ -61,7 +67,6 @@ public class TypeCheck {
                 List<Statement> listOfStatements = stmt.getStatementList();
                 StatementList statementList = new StatementList(stmt.getLocation(),listOfStatements);
                 typecheck(statementList);
-                System.out.println("kk");
             }
             case FunctionDefinition stmt -> {
                 var parameterList = stmt.getParameters();
@@ -154,13 +159,18 @@ public class TypeCheck {
                 return expr;
             }
             case Expr expr -> {
+                //ovde dodati za bang 
             /* Checked below.  */
             }
             }
 
             /* We have a regular expression here.  */
             switch (expr_.getOperation()) {
-                case ADD, DIV, MUL, CARET, SUB -> {// dodati ovde i ostale operacije
+                case ADD, DIV, MUL, CARET, SUB,
+                        MOD, BITAND, BITOR, OR, AND, NOTEQUAL,
+                        EQUALTO, GREATERTHAN, GREATERTHANOREQ,
+                        LESSTHAN, LESSTHANOREQ-> {// dodati ovde i ostale operacije
+
             /* Binary number expressions.  */
             expr_.setLhs(typecheck(expr_.getLhs()));
             expr_.setRhs(typecheck(expr_.getRhs()));
@@ -176,6 +186,18 @@ public class TypeCheck {
                     case VALUE ->
             /* Shouldn't be possible.  */
             throw new IllegalStateException();
+                case BANG -> {
+                    if (!expr_.getResultType().getTypeName().equals("yeahNah")){
+                        slang.error(expr_.getLocation(),
+                                "cannot use a value of type '%s' where type bool is needed",
+                                expr_.getResultType().userReadableName());
+                        //treba dodati sta u ovom slucaju da bude expr
+                    }else{
+                        expr_.setResultType(slang.getBoolType());
+                    }
+
+                    return expr_;
+                }
             }
 
                     throw new IllegalStateException();

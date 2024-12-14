@@ -76,7 +76,8 @@ public class Expr extends Tree{
         pp.node(operation.label,
                 () -> {
                     lhs.nodePrint(pp);
-                    rhs.nodePrint(pp);
+                    if (rhs!=null)
+                        rhs.nodePrint(pp);
                 });
     }
 }
