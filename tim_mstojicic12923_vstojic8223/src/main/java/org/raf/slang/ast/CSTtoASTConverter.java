@@ -309,8 +309,8 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
         var dataForReturn = ctx.ID().getLast().getText();
         System.out.println("Returned data: " + dataForReturn);
+        SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
         if(dataForReturn != null && (dataForReturn != "true" && dataForReturn != "false" && !isNumber(dataForReturn))  && !dataForReturn.equals(name)   ){
-            SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
             if(foundSimpleStatement == null) slang.error(getLocation(ctx), "returned variable doesn not exist");
         }
         var functionReturnType = ctx.variableType();
@@ -324,6 +324,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         }
         else textReturnType = functionReturnType.getText();
         var function = new FunctionDefinition(getLocation(ctx), name,textReturnType ,parameterList, statementList);
+        if(foundSimpleStatement != null) function.setTypeOfReturnData(foundSimpleStatement.getType().getTypeName());
         if(functionDefined(function.getName()))
             slang.error(getLocation(ctx), "function with this id already exist");
         else functionDefinitions.add(function);
@@ -368,6 +369,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                     if(functionDefinition.getParameters().size() != functionCall.getArguments().size()){
                         slang.error(getLocation(ctx), "function does not have correct number of arguments");
                     }
+                    functionCall.setDefinition(functionDefinition);
                 }
             }
         }

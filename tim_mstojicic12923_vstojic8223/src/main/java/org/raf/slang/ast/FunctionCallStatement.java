@@ -10,6 +10,7 @@ public final class FunctionCallStatement extends Statement{
 
     private String name;
     private List<Expr> arguments;
+    private FunctionDefinition definition;
 
 
     public FunctionCallStatement(Location location, String name, List<Expr> arguments) {

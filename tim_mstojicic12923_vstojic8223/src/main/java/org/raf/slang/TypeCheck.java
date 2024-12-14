@@ -63,10 +63,27 @@ public class TypeCheck {
                 typecheck(statementList);
                 System.out.println("kk");
             }
-            case FunctionDefinition stmt -> {}
-            case FunctionCallStatement stmt -> {}
+            case FunctionDefinition stmt -> {
+                var parameterList = stmt.getParameters();
+                var functioReturnType = stmt.getFunctionReturnType();
+                if(!functioReturnType.equals(stmt.getTypeOfReturnData())){
+                    slang.error(stmt.getLocation(), "type of returned data is not correct");
+
+                }
+                List<Statement> listOfStatements = stmt.getStatementList();
+                StatementList statementList = new StatementList(stmt.getLocation(),listOfStatements);
+                typecheck(statementList);
+            }
+            case FunctionCallStatement stmt -> {
+                if(stmt.getArguments().size() == stmt.getDefinition().getParameters().size()){
+                    for(int i = 0; i < stmt.getArguments().size(); i++){
+                        var newValue = typecheck(stmt.getArguments().get(i));
+                        tryAndConvert(stmt.getDefinition().getParameters().get(i).getType(),newValue);
+                    }
+                }
+            }
             case ScanStatement stmt -> {
-                System.out.println("k");
+               // ne ide nista za scan, mozda samo neke provere da l je pravilno napisao ime promenljive ili slicno
             }
 
             /* Statement list logic is above.*/
