@@ -1,7 +1,9 @@
 package org.raf.slang.ast;
 
-import java.util.List;
+import lombok.Getter;
 
+import java.util.List;
+@Getter
 public final class LoopStatement extends Statement{
 
     private List<Expr> exprList;

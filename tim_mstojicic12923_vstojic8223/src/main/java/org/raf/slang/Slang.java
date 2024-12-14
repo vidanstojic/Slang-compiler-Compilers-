@@ -53,8 +53,9 @@ public class Slang {
     }
 
     /* Type handling.  */
-    private final NumberType numberType = new NumberType(null, "number");// ispraviti ovo null
-    private final VoidType voidType = new VoidType(null, "void");
+    private final NumberType numberType = new NumberType(null, "numero");// ispraviti ovo null
+    private final BoolType boolType = new BoolType(null, "yeahNah");
+    private final VoidType voidType = new VoidType(null, "empty");
     @Getter(AccessLevel.NONE)
     private final Map<VariableType, ListType> listTypes = new HashMap<>();
     public VariableType listOfType(VariableType elementType) {

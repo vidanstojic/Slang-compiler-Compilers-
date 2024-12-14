@@ -4,7 +4,7 @@ package org.raf.slang.ast;
 /** A special node indicating an error occurred.  */
 public final class ErrorExpr extends Expr {
     private String message;
-    protected ErrorExpr(Location location) {
+    public ErrorExpr(Location location) {
         super(location);
     }
 

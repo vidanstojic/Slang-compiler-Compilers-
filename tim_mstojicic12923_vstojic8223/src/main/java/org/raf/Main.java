@@ -102,7 +102,7 @@ public class Main {
         program.nodePrint(pp);
         if (slang.hadError()) return;
 
-    //    new TypeCheck(slang).typecheck(program);
+        new TypeCheck(slang).typecheck(program);
         System.out.println("tAST:");
         program.nodePrint(pp);
         if (slang.hadError()) return;

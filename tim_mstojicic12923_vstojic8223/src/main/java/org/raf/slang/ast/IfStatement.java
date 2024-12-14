@@ -1,7 +1,11 @@
 package org.raf.slang.ast;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
+@Getter
 public final class IfStatement extends Statement{
 
     private List<Expr>exprList;
