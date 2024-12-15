@@ -16,6 +16,7 @@ statement
     | functionDefinition
     | functionCallStatement
     | block
+    | array
     ;
 simpleStatement
     : variableType ID ('=' expr)? ';'
@@ -25,9 +26,11 @@ variableType
     : NUMBER_KEYWORD
     | BOOLEAN_KEYWORD
     | VOID_KEYWORD
-    | ARRAY_KEYWORD NUMBER_KEYWORD '[' NUMBER_LITERAL']'
-    // eventualno dodati ovde i ARRAY
     ;
+array
+    : ARRAY_KEYWORD variableType ID '[' (NUMBER_LITERAL)?']' '=' '{' expr (','expr)* '}'';'
+    ;
+
 ifStatement
     : IF_KEYWORD '(' (('!' expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'
     ;

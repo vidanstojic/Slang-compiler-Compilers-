@@ -83,6 +83,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         else if(statement instanceof LoopStatement){
             oldDecl = environments.getLast().put(name, statement);
         }
+        else if(statement instanceof ArrayStatement){
+            oldDecl = environments.getLast().put(name, statement);
+        }
 
         if (oldDecl != null) {
             slang.error(statement.getLocation(), "");
@@ -201,6 +204,36 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             return null;
         }
 
+    }
+
+    @Override
+    public Tree visitArray(SlangParser.ArrayContext ctx) {
+        var name = ctx.ID().getText();
+        List<Expr> elementsOfArray = new ArrayList<>();
+        int i = 0;
+        while(ctx.expr(i) != null) {
+            Expr value = (Expr) visit(ctx.expr(i));
+            elementsOfArray.add(value);
+            i++;
+        }
+        ArrayLiteral arrayLiteral = new ArrayLiteral(getLocation(ctx), elementsOfArray);
+        VariableType type = null;
+        if (ctx.variableType() != null) {
+            type = (VariableType) visit(ctx.variableType());
+        }
+        arrayLiteral.setTypeOfArray(type);
+        int sizeOfArray = -1;
+        if(ctx.NUMBER_LITERAL() != null){
+            if(isNumber(ctx.NUMBER_LITERAL().getText())){
+                sizeOfArray = Integer.parseInt(ctx.NUMBER_LITERAL().getText());
+            }
+        }
+        ArrayStatement array = new ArrayStatement(getLocation(ctx), name, arrayLiteral, type);
+        if(sizeOfArray != -1){
+            array.setSizeOfArray(sizeOfArray);
+        }
+        pushStatement(name, array);
+        return array;
     }
 
 

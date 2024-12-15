@@ -96,6 +96,9 @@ public class TypeCheck {
             case ScanStatement stmt -> {
                // ne ide nista za scan, mozda samo neke provere da l je pravilno napisao ime promenljive ili slicno
             }
+            case ArrayStatement stmt -> {
+                typecheck(stmt.getElements());
+            }
 
             /* Statement list logic is above.*/
             case StatementList stmt -> typecheck(stmt);
@@ -152,18 +155,18 @@ public class TypeCheck {
                     return expr;
                 }
                 /* Element type.  */
-                var eltType = expr.getElements().getFirst().getResultType();
+                var eltType = expr.getTypeOfArray();
                 var vectorType = slang.listOfType(eltType);
-                        expr.setResultType(vectorType);
+                expr.setResultType(vectorType);
 
                 /* Now we need to try to make the elements fit the vectors.  */
-                        for (int i = 0; i < expr.getElements().size(); i++) {
+                for (int i = 0; i < expr.getElements().size(); i++) {
                     var newElem = tryAndConvert(eltType, expr.getElements().get(i));
                     expr.getElements().set(i, newElem);
                 }
 
                 /* Done.  */
-                        return expr;
+                return expr;
             }
             case BoolLiteral expr -> {
                 expr.setResultType(slang.getBoolType());
