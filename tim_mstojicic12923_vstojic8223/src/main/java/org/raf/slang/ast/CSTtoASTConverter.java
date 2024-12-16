@@ -34,6 +34,12 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     /** Removes the last scope. */
     private void closeBlock() {
+        for(Statement statement : environments.getLast().values()){
+            if(statement instanceof ArrayStatement){
+                ArrayStatement array = arrayDefined(((ArrayStatement) statement).getName());
+                if(array != null) arrays.remove(array);
+            }
+        }
         environments.removeLast();
     }
     private boolean isNumber(String str) {
@@ -48,15 +54,21 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         openBlock();
     }
     public void lastClose(){
+        for(Statement statement : environments.getLast().values()){
+            if(statement instanceof FunctionDefinition){
+                FunctionDefinition function = functionDefined(((FunctionDefinition) statement).getName());
+                if(function != null) functionDefinitions.remove(function);
+            }
+        }
         closeBlock();
     }
 
-    private boolean functionDefined(String functionName){
+    private FunctionDefinition functionDefined(String functionName){
         for(FunctionDefinition functionFromList : functionDefinitions){
             if(functionFromList.getName().equals(functionName))
-                return true;
+                return functionFromList;
         }
-        return false;
+        return null;
     }
 
     private ArrayStatement arrayDefined(String arrayName){
@@ -243,6 +255,10 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             array.setSizeOfArray(array.getElements().getElements().size());
             arrayLiteral.setSizeOfArray(array.getElements().getElements().size());
         }
+
+        if(sizeOfArray > array.getElements().getElements().size()){
+            slang.error(getLocation(ctx), "the array size must match the specified number of elements.");
+        }
         this.arrays.add(array);
         pushStatement(name, array);
         return array;
@@ -371,9 +387,24 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         else textReturnType = functionReturnType.getText();
         var function = new FunctionDefinition(getLocation(ctx), name,textReturnType ,parameterList, statementList);
         if(foundSimpleStatement != null) function.setTypeOfReturnData(foundSimpleStatement.getType().getTypeName());
-        if(functionDefined(function.getName()))
+        else if(ctx.NUMBER_LITERAL() != null){
+            if(isNumber(ctx.NUMBER_LITERAL().getText())){
+                function.setTypeOfReturnData("numero");
+            }
+        }
+        else if(ctx.BOOLEAN_LITERAL() != null){
+            function.setTypeOfReturnData("yeahNah");
+        }
+        else if(ctx.VOID_KEYWORD() != null){
+            function.setTypeOfReturnData("empty");
+        }
+        if(functionDefined(function.getName()) != null)
             slang.error(getLocation(ctx), "function with this id already exist");
-        else functionDefinitions.add(function);
+        else{
+            functionDefinitions.add(function);
+           // pushStatement(name, function);
+            environments.getFirst().put(name, function);
+        }
         closeBlock();
         return function;
     }
@@ -406,7 +437,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .toList();
 
         var functionCall = new FunctionCallStatement(getLocation(ctx), name,exprList);
-        if(!functionDefined(name))
+        if(functionDefined(name) == null)
             slang.error(getLocation(ctx), "function with this id does not exist");
         else{
             // provera da li je poslat odgovarajuci broj argumenata(ovde samo proveravamo broj, a u tipizaciji cemo proveriti da li su dobri tipovi argumenata)
