@@ -36,19 +36,17 @@ public class TypeCheck {
 
 
 
-            }
+            }//check(true && 5 < 6){} ; numero br = 2; check(false && br < 10 || br > 5){}
             case IfStatement stmt -> {
                 var exprList = stmt.getExprList();
                 for (Expr expr2: exprList){
-                    typecheck(expr2);
-                }
-                Expr expr = tryAndConvert(exprList.get(0).getResultType(), exprList.get(0));
-                int j = 0;
-                for(int i = 0; i < exprList.size(); i++){
-                    if(!tryAndConvert(exprList.get(j).getResultType(), exprList.get(i)).getResultType().getTypeName().equals(expr.getResultType().getTypeName())){
-                        slang.error(stmt.getLocation(), "GRESKAA, NISU ISTI TIPOVII");
-                    }
-
+                    if ((expr2.getLhs() != null && expr2.getRhs() != null) && expr2.getOperation() != null)
+                        expr2.setResultType(slang.getBoolType());
+                    else if (expr2.getOperation() == Expr.Operation.ADD || expr2.getOperation() == Expr.Operation.OR) {
+                        expr2.setResultType(slang.getBoolType());
+                    } else
+                        typecheck(expr2);
+                    System.out.println(expr2);
                 }
 
                 List<Statement> listOfStatements = stmt.getStatementList();
@@ -174,13 +172,22 @@ public class TypeCheck {
                 return expr;
             }
             case Expr expr -> {
-            /* Checked below.  */
+
             }
             }
             /* We have a regular expression here.  */
             switch (expr_.getOperation()) {
+                case AND, OR -> {
+                    expr_.setLhs(typecheck(expr_.getLhs()));
+                    expr_.setRhs(typecheck(expr_.getRhs()));
+
+                    expr_.setLhs(tryAndConvert(slang.getBoolType(), expr_.getLhs()));
+                    expr_.setRhs(tryAndConvert(slang.getBoolType(), expr_.getRhs()));
+                    expr_.setResultType(slang.getBoolType());
+                    return expr_;
+                }
                 case ADD, DIV, MUL, CARET, SUB,
-                        MOD, BITAND, BITOR, OR, AND, NOTEQUAL,
+                        MOD, BITAND, BITOR, NOTEQUAL,
                         EQUALTO, GREATERTHAN, GREATERTHANOREQ,
                         LESSTHAN, LESSTHANOREQ-> {
 

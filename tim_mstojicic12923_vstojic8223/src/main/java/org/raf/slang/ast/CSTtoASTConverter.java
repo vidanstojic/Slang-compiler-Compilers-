@@ -280,7 +280,12 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
-
+        /*
+        var temp = visit(ctx.getChild(2));
+        var temp1 = visit(ctx.getChild(1));
+        var temp2 = visit(ctx.getChild(0));
+        System.out.println(temp);
+        */
         var ifStatement = new IfStatement(getLocation(ctx), exprList, statementList);
 
 
@@ -307,30 +312,35 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     @Override
     public Tree visitLoopStatement(SlangParser.LoopStatementContext ctx) {
         openBlock();
-        var name = ctx.ID().getLast().getText();
         Expr value = null;
         if (ctx.expr(0) != null) {
             value = (Expr) visit(ctx.expr(0));
         }
       //  VariableType type = new VariableType(getLocation(ctx), "null");
         VariableType type = null;
-        if (ctx.children.toString().contains("numero"))
+        if (ctx.children.toString().contains("numero")){
+            var name = ctx.ID().getLast().getText();
             type = new NumberType(getLocation(ctx), ctx.children.get(2).toString());
-        else
-            type = new VoidType(getLocation(ctx), "null");
-       //     type.setTypeName(ctx.children.get(2).toString());
-        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
-        pushStatement(name, simpleStatement);
+            if (value instanceof NumberLiteral)
+                type = new NumberType(getLocation(ctx), value.toString());
+            else if (value instanceof BoolLiteral)
+                type = new BoolType(getLocation(ctx), value.toString());
+            var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
+            pushStatement(name, simpleStatement);
+        }
         var exprList = ctx.expr()
                 .stream()
                 .map(this::visit)
                 .map(x -> (Expr) x)
                 .toList();
-        if (ctx.children.get(2).toString().equals("numero")){
-            lookup(getLocation(ctx), ctx.children.get(7).toString());
-        }else
-            lookup(getLocation(ctx), ctx.children.get(3).toString());
 
+        /*if (ctx.children.get(2).toString().equals("numero")){
+            lookup(getLocation(ctx), ctx.children.get(7).toString());
+        }else if (ctx.children.toString().contains("replay"))
+            lookup(getLocation(ctx), ctx.children.get(2).toString());
+        else
+            lookup(getLocation(ctx), ctx.children.get(3).toString());
+*/
         var statementList = ctx.statement()
                 .stream()
                 .map(this::visit)
@@ -518,6 +528,10 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             exprOp = Expr.Operation.LESSTHANOREQ;
         else if(Objects.equals(operatorText, "=="))
             exprOp = Expr.Operation.EQUALTO;
+        else if (Objects.equals(operatorText, "&&"))
+            exprOp = Expr.Operation.AND;
+        else if (Objects.equals(operatorText, "||"))
+            exprOp = Expr.Operation.OR;
         else
             throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
 
@@ -550,11 +564,11 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     @Override
     public Tree visitMulDivOperands(SlangParser.MulDivOperandsContext ctx) {
         if (ctx.mulDivOperands() == null) {
-            return visit(ctx.core());
+            return visit(ctx.powOperands());
         }
 
         var left = (Expr) visit(ctx.mulDivOperands());
-        var right = (Expr) visit(ctx.core());
+        var right = (Expr) visit(ctx.powOperands());
 
         var operatorText = ctx.getChild(1).getText();
         Expr.Operation exprOp;
@@ -562,6 +576,25 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             exprOp = Expr.Operation.MUL;
         else if(Objects.equals(operatorText, "/"))
             exprOp = Expr.Operation.DIV;
+        else
+            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
+
+        var loc = left.getLocation().span(right.getLocation());
+        return new Expr(loc, exprOp, left, right);
+    }
+
+    @Override
+    public Tree visitPowOperands(SlangParser.PowOperandsContext ctx) {
+        if (ctx.powOperands() == null) {
+            return visit(ctx.core());
+        }
+        var left = (Expr) visit(ctx.powOperands());
+        var right = (Expr) visit(ctx.core());
+
+        var operatorText = ctx.getChild(1).getText();
+        Expr.Operation exprOp;
+        if(Objects.equals(operatorText, "^"))
+            exprOp = Expr.Operation.CARET;
         else
             throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
 

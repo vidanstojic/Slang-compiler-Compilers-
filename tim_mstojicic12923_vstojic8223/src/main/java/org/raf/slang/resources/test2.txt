@@ -1,0 +1,13 @@
+    numero proba = 5;
+    yeahNah davaj = true;
+    spin(;proba<5;proba+1){
+        check(proba<3){
+            numero marko = 10;
+            replay(marko>9){
+                check(marko<10){
+                    numero vidan = 15;
+                }
+            }
+        }
+    }
+    numero k = 2;

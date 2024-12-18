@@ -32,7 +32,7 @@ array
     ;
 
 ifStatement
-    : IF_KEYWORD '(' (('!' expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'
+    : IF_KEYWORD '(' ((BANG expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'
     ;
 
 elseStatement
@@ -42,8 +42,8 @@ elseStatement
 //bool flag = true
 //for(int i = 0;!flag;++i)
 loopStatement
-    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ((BANG)? ID (('<' | '>' | '<=' | '>=' | '&&' | '||') expr)? )+ ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
-    | WHILE_KEYWORD '(' ((BANG)? ID (('<' | '>' | '<=' | '>='| '&&' | '||') expr)?)+  ')''{' (statement)* '}'
+    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ((BANG)?expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) (BANG)?expr) ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
+    | WHILE_KEYWORD '(' ((BANG)?expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) (BANG)?expr)  ')''{' (statement)* '}'
     ;
 
 
@@ -75,7 +75,7 @@ expr
     ;
 
 relationalOperands
-    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO) addSubOperands
+    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO | ADD | OR) addSubOperands
     | addSubOperands
     ;
 
@@ -85,7 +85,12 @@ addSubOperands
     ;
 
 mulDivOperands
-    : mulDivOperands(MUL | DIV) core
+    : mulDivOperands (MUL | DIV) powOperands
+    | powOperands
+    ;
+
+powOperands
+    : powOperands CARET core
     | core
     ;
 
