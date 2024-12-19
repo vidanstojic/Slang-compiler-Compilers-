@@ -75,7 +75,7 @@ expr
     ;
 
 relationalOperands
-    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO | ADD | OR) addSubOperands
+    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO | AND | OR) addSubOperands
     | addSubOperands
     ;
 

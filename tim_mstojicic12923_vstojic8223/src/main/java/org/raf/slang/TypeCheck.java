@@ -42,7 +42,7 @@ public class TypeCheck {
                 for (Expr expr2: exprList){
                     if ((expr2.getLhs() != null && expr2.getRhs() != null) && expr2.getOperation() != null)
                         expr2.setResultType(slang.getBoolType());
-                    else if (expr2.getOperation() == Expr.Operation.ADD || expr2.getOperation() == Expr.Operation.OR) {
+                    else if (expr2.getOperation() == Expr.Operation.AND || expr2.getOperation() == Expr.Operation.OR) {
                         expr2.setResultType(slang.getBoolType());
                     } else
                         typecheck(expr2);

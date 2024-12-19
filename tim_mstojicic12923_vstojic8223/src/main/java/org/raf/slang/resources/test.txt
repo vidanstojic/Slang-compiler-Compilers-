@@ -10,7 +10,7 @@
                     numero vidan = 15;
                 }
                 check(!false){
-replay(marko > 17 && !false){
+                replay(marko > 17 && !false){
                     numero vidan = 100;
                     }
                 }
@@ -18,4 +18,5 @@ replay(marko > 17 && !false){
         }
     }
 }
-    numero k = 2;
+    squad numero mare[2] = {1,2};
+    numero k = mare[0];

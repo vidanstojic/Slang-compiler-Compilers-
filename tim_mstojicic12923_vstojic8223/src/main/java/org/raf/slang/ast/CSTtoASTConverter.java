@@ -280,12 +280,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
-        /*
-        var temp = visit(ctx.getChild(2));
-        var temp1 = visit(ctx.getChild(1));
-        var temp2 = visit(ctx.getChild(0));
-        System.out.println(temp);
-        */
+
         var ifStatement = new IfStatement(getLocation(ctx), exprList, statementList);
 
 
@@ -318,13 +313,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         }
       //  VariableType type = new VariableType(getLocation(ctx), "null");
         VariableType type = null;
-        if (ctx.children.toString().contains("numero")){
+        if (ctx.children.toString().contains("numero") || ctx.children.toString().contains("yeahNah")){
             var name = ctx.ID().getLast().getText();
             type = new NumberType(getLocation(ctx), ctx.children.get(2).toString());
             if (value instanceof NumberLiteral)
-                type = new NumberType(getLocation(ctx), value.toString());
+                type = new NumberType(getLocation(ctx), slang.getNumberType().getTypeName());
             else if (value instanceof BoolLiteral)
-                type = new BoolType(getLocation(ctx), value.toString());
+                type = new BoolType(getLocation(ctx), slang.getBoolType().getTypeName());
             var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
             pushStatement(name, simpleStatement);
         }
@@ -380,7 +375,6 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .toList();
 
         var dataForReturn = ctx.ID().getLast().getText();
-        System.out.println("Returned data: " + dataForReturn);
         SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
         if(dataForReturn != null && (dataForReturn != "true" && dataForReturn != "false" && !isNumber(dataForReturn))  && !dataForReturn.equals(name)   ){
             if(foundSimpleStatement == null) slang.error(getLocation(ctx), "returned variable doesn not exist");

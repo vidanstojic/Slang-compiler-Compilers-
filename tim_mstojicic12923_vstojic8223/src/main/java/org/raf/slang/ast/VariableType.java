@@ -9,7 +9,7 @@ import lombok.ToString;
 public abstract class VariableType extends Tree{
 
     private final String typeName;
-    private VariableType variableType;
+    //private VariableType variableType;
 
     public VariableType (Location loc, String typeName) {
         super(loc);
