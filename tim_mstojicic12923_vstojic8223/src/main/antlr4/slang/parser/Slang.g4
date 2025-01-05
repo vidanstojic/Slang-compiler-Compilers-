@@ -39,8 +39,6 @@ elseStatement
     : ELSE_KEYWORD '{'(statement)* '}'
     ;
 
-//bool flag = true
-//for(int i = 0;!flag;++i)
 loopStatement
     : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ((BANG)?expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) (BANG)?expr) ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
     | WHILE_KEYWORD '(' ((BANG)?expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) (BANG)?expr)  ')''{' (statement)* '}'

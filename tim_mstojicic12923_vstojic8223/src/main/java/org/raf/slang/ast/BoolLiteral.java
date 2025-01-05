@@ -1,7 +1,12 @@
 package org.raf.slang.ast;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.Objects;
 
+@Getter
+@Setter
 public class BoolLiteral extends Expr{
 
     private boolean bool;

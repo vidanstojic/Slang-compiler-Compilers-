@@ -9,8 +9,7 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.raf.slang.ast.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @Setter
@@ -60,6 +59,42 @@ public class Slang {
     private final Map<VariableType, ListType> listTypes = new HashMap<>();
     public VariableType listOfType(VariableType elementType) {
         return listTypes.computeIfAbsent(elementType, ListType::new).getVariableType();
+    }
+/*  TEK TREBA DA SE DODA ZA VM
+    private final List<Function> functions = new ArrayList<>();
+
+    public int addFunction(Function newFunction) {
+        var itsIndex = functions.size();
+        functions.add(newFunction);
+        return itsIndex;
+    }
+
+    public Function getFunction(int functionId) {
+        return functions.get(functionId);
+    }
+*/
+@Getter(AccessLevel.NONE)
+private final IdentityHashMap<SimpleStatement, Integer> globalIndices =
+        new IdentityHashMap<>();
+
+    /** Allocate a slot in the globals table for this global variable.  */
+    public int declareGlobal(SimpleStatement newGlobal) {
+        var newGlobalNumber = globalIndices.size();
+        var oldIndex = globalIndices.put(newGlobal, newGlobalNumber);
+        /* Should not have been present.  */
+        assert oldIndex == null;
+        return newGlobalNumber;
+    }
+
+    /** Get number of globals.  */
+    public int getGlobalCount() {
+        return globalIndices.size();
+    }
+
+    /** Get the slot in which {@code global} is stored in the global table.  */
+    public Optional<Integer> getGlobalSlot(SimpleStatement global) {
+        var globalSlot = globalIndices.get(global);
+        return Optional.ofNullable(globalSlot);
     }
 
 }

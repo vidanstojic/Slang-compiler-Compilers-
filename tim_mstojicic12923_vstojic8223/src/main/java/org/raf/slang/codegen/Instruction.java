@@ -8,7 +8,7 @@ package org.raf.slang.codegen;
 import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
-public final class Instructions {
+public final class Instruction {
     // unutar code cemo bukvalno imati svaku komandu koja je moguca u nasem jeziku
     public enum Code{
         POP,
@@ -48,7 +48,9 @@ public final class Instructions {
         BIT_MUL,
         BIT_DIV,
         BIT_CR,// ^
-
+        SET_GLOBAL(1),
+        GET_GLOBAL(1),
+        PRINT,
         EXIT,
         PUTC,
         ;
@@ -61,12 +63,12 @@ public final class Instructions {
     private Code opcode;
     public Code opcode(){return opcode;}
 
-    public Instructions(Code opcode){
+    public Instruction(Code opcode){
         assert opcode.argCount == 0;
         this.opcode = opcode;
     }
 
-    public Instructions(Code opcode, long arg1){
+    public Instruction(Code opcode, long arg1){
         assert opcode.argCount == 1;
         this.opcode = opcode;
         this.arg1 = arg1;
