@@ -1,4 +1,4 @@
-package org.raf.slang.codegen;
+package org.raf.slang.vm;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

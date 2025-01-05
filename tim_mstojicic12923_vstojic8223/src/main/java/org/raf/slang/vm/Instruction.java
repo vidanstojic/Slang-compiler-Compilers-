@@ -1,4 +1,4 @@
-package org.raf.slang.codegen;
+package org.raf.slang.vm;
 
 /*
 * Posto cemo na steku cuvati zapravo instrukcije koje je potrebno da izvrsimo, moramo imati klasu

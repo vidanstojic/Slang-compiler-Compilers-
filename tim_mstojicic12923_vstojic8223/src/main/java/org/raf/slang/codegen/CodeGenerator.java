@@ -8,6 +8,8 @@ package org.raf.slang.codegen;
 import lombok.Getter;
 import org.raf.slang.Slang;
 import org.raf.slang.ast.*;
+import org.raf.slang.vm.Instruction;
+import org.raf.slang.vm.IpInstruction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +66,7 @@ public class CodeGenerator {
                 for(Expr expr : loopStmt.getExprList()) compileExpr(expr);
                 var skipBody = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
+                // dodati continue i breakStmts
             }
             case PrintStatement printStmt -> {
                 printStmt.getArguments().forEach
