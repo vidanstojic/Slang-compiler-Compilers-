@@ -1,7 +1,8 @@
 package org.raf.slang.vm;
 
+import lombok.Data;
 import org.raf.slang.ast.FunctionDefinition;
-
+@Data
 public class Function {
     private BytecodeContainer code;
     /** Given {@code upvalueMap[i] = x}, upvalue in slot {@code i} will be

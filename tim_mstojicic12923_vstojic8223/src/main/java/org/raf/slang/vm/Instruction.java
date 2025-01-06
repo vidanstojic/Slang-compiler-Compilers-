@@ -5,9 +5,11 @@ package org.raf.slang.vm;
 * za instrukcije(Instructions/cesto se skraceno pise i insn).
 * */
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
+@Data
 public final class Instruction {
     // unutar code cemo bukvalno imati svaku komandu koja je moguca u nasem jeziku
     public enum Code{
@@ -50,6 +52,8 @@ public final class Instruction {
         BIT_CR,// ^
         SET_GLOBAL(1),
         GET_GLOBAL(1),
+        // Upvalue handling.
+        GET_UPVALUE(1),
         PRINT,
         EXIT,
         PUTC,

@@ -10,6 +10,7 @@ import org.raf.slang.Slang;
 import org.raf.slang.ast.*;
 import org.raf.slang.vm.Instruction;
 import org.raf.slang.vm.IpInstruction;
+import org.raf.slang.vm.UpvalueMapEntry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ public class CodeGenerator {
     private Stack<List<IpInstruction>> continueStmts = new Stack<>();
     private Stack<List<IpInstruction>> exitStmts = new Stack<>();
 
+    private InTranslationBytecodeContainer bytecodeContainer;
 
     private final Slang slang;
   //  private final IdentityHashMap<FunctionDefinition, Integer> functionLUT;
@@ -84,11 +86,50 @@ public class CodeGenerator {
     }
 
 
+
+    private Instruction findLocalInsn(InTranslationBytecodeContainer blob,
+                                      SimpleStatement decl) {
+        /* We already checked globals in getVarInsn.  */
+        var locals = blob.getLocalSlots();
+        var upvals = blob.getUpvalSlots();
+        assert locals != null && upvals != null;
+
+        var local = locals.get(decl);
+        if (local != null)
+            return new Instruction(Instruction.Code.GET_LOCAL, local);
+
+        /* So, this is a upvalue.  But is it new?  */
+        var upval = blob.getUpvalSlots().get(decl);
+        if (upval != null)
+            /* No, it isn't.  */
+            return new Instruction(Instruction.Code.GET_UPVALUE, upval.slotNr());
+
+        /* It is.  */
+        var inSuperscope = findLocalInsn(blob.getPreviousBlob(), decl);
+        var upvalSlot = blob.getUpvalSlots().size();
+
+        var upvalME = new UpvalueMapEntry(switch (inSuperscope.getOpcode()) {
+            case Instruction.Code.GET_LOCAL -> UpvalueMapEntry.UpvalueLocation.LOCAL;
+            case Instruction.Code.GET_UPVALUE  -> UpvalueMapEntry.UpvalueLocation.UPVALUE;
+            default -> throw new IllegalArgumentException();
+        }, Math.toIntExact(inSuperscope.getArg1()));
+
+        var oldSlot = blob.getUpvalSlots()
+                .put(decl, new InTranslationBytecodeContainer.UpvalSlotInfo(upvalSlot, upvalME));
+        assert oldSlot == null;
+        return new Instruction(Instruction.Code.GET_UPVALUE, upvalSlot);
+    }
+
+
     private void compileSimpleStatement(SimpleStatement simpleStatement) {
         compileExpr(simpleStatement.getValue());
     }
 
-
+    private Instruction getVarInsn(SimpleStatement decl) {
+        return slang.getGlobalSlot(decl)
+                .map(s -> new Instruction(Instruction.Code.GET_GLOBAL, s))
+                .orElseGet(() -> findLocalInsn(bytecodeContainer, decl));
+    }
 
 
     private void compileExpr(Expr expr) {
@@ -101,11 +142,16 @@ public class CodeGenerator {
                 else emit(Instruction.Code.PUSH_FALSE, Integer.MAX_VALUE);
             }
             case NumberLiteral numberLiteral -> {
-
+                var constantNumber = bytecodeContainer.getCode().constantTable().size();
+                bytecodeContainer.getCode().constantTable().add(numberLiteral.getValue());
+                emit(Instruction.Code.PUSHI, constantNumber);
             }
-            case ArrayLiteral arrayLiteral -> {}
+            case ArrayLiteral arrayLiteral -> {
+                arrayLiteral.getElements().forEach(this::compileExpr);
+                emit(Instruction.Code.COLLECT, arrayLiteral.getElements().size());
+            }
             case VariableRef variable -> {
-              //  emit(getVarInsn(var.getVariable()));
+                emit(getVarInsn(variable.getVariable()));
 
             }
             case Expr binaryExpr -> {
@@ -162,6 +208,9 @@ public class CodeGenerator {
         var ip = instructions.size();
         instructions.add(insn);
         return new IpInstruction(ip, insn);
+    }
+    private int emit(Instruction insn) {
+        return bytecodeContainer.getCode().addInsn(insn);
     }
 
     private int ip(){
