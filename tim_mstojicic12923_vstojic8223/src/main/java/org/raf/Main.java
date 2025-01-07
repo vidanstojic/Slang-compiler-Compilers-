@@ -9,7 +9,9 @@ import org.raf.slang.TypeCheck;
 import org.raf.slang.ast.ASTNodePrinter;
 import org.raf.slang.ast.CSTtoASTConverter;
 import org.raf.slang.ast.StatementList;
+import org.raf.slang.codegen.CodeGenerator;
 import org.raf.slang.utils.SlangPrint;
+import org.raf.slang.vm.VM;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -26,7 +28,8 @@ public class Main {
 
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
-
+    private static final CodeGenerator codeGenerator = new CodeGenerator(slang);
+   // private static final VM vm = new VM(slang);
 
     public static void main(String[] args) throws IOException {
         java.util.Scanner scanner = new java.util.Scanner(System.in);
@@ -106,6 +109,13 @@ public class Main {
         System.out.println("tAST:");
         program.nodePrint(pp);
         if (slang.hadError()) return;
+
+        var bytecode = codeGenerator.compileInput(program);
+        slang.dumpNewAssembly(System.out, bytecode);
+        /* The compiler cannot emit errors.  */
+        assert !slang.hadError();
+
+        //vm.run(bytecode);
     }
 
 }

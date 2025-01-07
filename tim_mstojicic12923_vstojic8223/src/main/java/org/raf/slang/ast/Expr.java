@@ -58,7 +58,7 @@ public class Expr extends Tree{
         this.rhs = Objects.requireNonNull(rhs);
     }
 
-    protected Expr(Location location)
+    public Expr(Location location)
     {
         super(location);
         this.operation = Operation.VALUE;

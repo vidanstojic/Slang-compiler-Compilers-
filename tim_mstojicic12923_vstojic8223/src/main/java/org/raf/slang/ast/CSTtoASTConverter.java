@@ -496,6 +496,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public Tree visitScanStatement(SlangParser.ScanStatementContext ctx) {
         var arguments = ctx.expr().getText();
         lookup(getLocation(ctx), arguments);
+        ScanStatement scanStatement = new ScanStatement(getLocation(ctx), arguments);
+        SimpleStatement foundSimpleStatement = findSimpleStatement(arguments);
+        if(foundSimpleStatement != null)  scanStatement.setVariableType(foundSimpleStatement.getType());
         return new ScanStatement(getLocation(ctx), arguments);
     }
 

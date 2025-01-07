@@ -19,8 +19,6 @@ import java.util.Stack;
 public class CodeGenerator {
     // ovde je potrebno da stoji compile funkcija
 
-    @Getter
-    private final ArrayList<Instruction> instructions = new ArrayList<>(); // stek na koji stavljamo instrukcije
     private Stack<List<IpInstruction>> continueStmts = new Stack<>();
     private Stack<List<IpInstruction>> exitStmts = new Stack<>();
 
@@ -31,7 +29,7 @@ public class CodeGenerator {
 
 
 
-    private CodeGenerator(Slang slang) {
+    public CodeGenerator(Slang slang) {
         this.slang = slang;
         // this.functionLUT...
     }
@@ -100,8 +98,6 @@ public class CodeGenerator {
                 // ovde je napisano kako se izvrsava if u slucaju kada nema else
                 // mi ne cuvamo nigde informacije o else unutar IfStmt pa zato ne mogu da pristupim tome i vidim da li postoji else
 
-
-                // compileExpr za condition
                 for(Expr expr : ifStmt.getExprList()) compileExpr(expr);
                 var skipThen = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
@@ -111,14 +107,30 @@ public class CodeGenerator {
                 emit(Instruction.Code.POP);
                 backpatch(skipPop);
             }
-            case ElseStatement elseStmt -> {}
+            case ElseStatement elseStmt -> {
+                for(Statement statementEl : elseStmt.getStatementList()) {
+                    compileStatement(statementEl);
+                }
+            }
             case LoopStatement loopStmt -> {
-                // Ovo je logika samo za while, treba razdvojiti logiku za for i za while
-                var startIp = ip();
+                var startIp = ip();  // Početak petlje
                 for(Expr expr : loopStmt.getExprList()) compileExpr(expr);
                 var skipBody = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
-                // dodati continue i breakStmts
+
+                // Dodavanje continue i break logike
+                continueStmts.push(new ArrayList<>());
+                exitStmts.push(new ArrayList<>());
+
+                for(Statement statementEl : loopStmt.getStatementList()) compileStatement(statementEl);
+                emit(Instruction.Code.JUMP, jumpOffset(startIp));
+
+                // Backpatching for break and continue
+                backpatch(skipBody);
+                for (var stmt : exitStmts.pop()) backpatch(stmt);
+                for (var stmt : continueStmts.pop()) backpatch(stmt, startIp);
+
+                emit(Instruction.Code.POP);
             }
             case PrintStatement printStmt -> {
                 printStmt.getArguments().forEach
@@ -127,7 +139,17 @@ public class CodeGenerator {
                             emit(Instruction.Code.PRINT);
                         });
             }
-            case ScanStatement scanStmt -> {}
+            case ScanStatement scanStmt -> {
+                emit(Instruction.Code.SCAN);
+
+                // Postavljamo rezultat unosa u promenljivu
+                var newVarSetter = declareVariable(new SimpleStatement(
+                        scanStmt.getLocation(),
+                        scanStmt.getName(),
+                        null, scanStmt.getVariableType())
+                );
+                emit(newVarSetter);
+            }
             case FunctionDefinition functionDefinition -> {
                 VariableType variableType = new VariableType(functionDefinition.getLocation(), functionDefinition.getFunctionReturnType()) {
                     @Override
@@ -140,8 +162,16 @@ public class CodeGenerator {
                 emit(Instruction.Code.BUILD_CLOSURE, fnId);
                 emit(newVarSetter);
             }
-            case FunctionCallStatement functionCallStatement -> {}
-            case ArrayStatement arrayStmt -> {}
+            case FunctionCallStatement functionCallStatement -> {
+                Expr expr = new Expr(functionCallStatement.getLocation()); // IZMENITI
+                compileExpr(expr);
+                functionCallStatement.getArguments().forEach(this::compileExpr);
+                emit(Instruction.Code.FUNCTION_CALL, functionCallStatement.getArguments().size());
+            }
+            case ArrayStatement arrayStmt -> {
+                arrayStmt.getElements().getElements().forEach(this::compileExpr);
+                emit(Instruction.Code.COLLECT, arrayStmt.getElements().getElements().size());
+            }
             case StatementList listStmt -> {
                 compileBlock(listStmt);
             }
@@ -252,7 +282,6 @@ public class CodeGenerator {
             }
             case VariableRef variable -> {
                 emit(getVarInsn(variable.getVariable()));
-
             }
             case Expr binaryExpr -> {
                 switch (binaryExpr.getOperation()) {
@@ -299,14 +328,12 @@ public class CodeGenerator {
     }
     private IpInstruction emit(Instruction.Code instructionCode, long arg1) {
         var insn = new Instruction(instructionCode, arg1);
-        var ip = instructions.size();
-        instructions.add(insn);
+        var ip = bytecodeContainer.getCode().code().size();
         return new IpInstruction(ip, insn);
     }
     private IpInstruction emit(Instruction.Code instructionCode) {
         var insn = new Instruction(instructionCode);
-        var ip = instructions.size();
-        instructions.add(insn);
+        var ip = bytecodeContainer.getCode().code().size(); ;
         return new IpInstruction(ip, insn);
     }
     private int emit(Instruction insn) {
@@ -314,7 +341,8 @@ public class CodeGenerator {
     }
 
     private int ip(){
-        return instructions.size(); // vraca IP od sledece instrukcije
+        return bytecodeContainer.getCode().code().size();
+        // vraca IP od sledece instrukcije
     }
 
 
