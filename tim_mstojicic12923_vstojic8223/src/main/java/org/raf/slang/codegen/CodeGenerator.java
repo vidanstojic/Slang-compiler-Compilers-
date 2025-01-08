@@ -19,8 +19,8 @@ import java.util.Stack;
 public class CodeGenerator {
     // ovde je potrebno da stoji compile funkcija
 
-    private Stack<List<IpInstruction>> continueStmts = new Stack<>();
-    private Stack<List<IpInstruction>> exitStmts = new Stack<>();
+    private Stack<List<Integer>> continueStmts = new Stack<>();
+    private Stack<List<Integer>> exitStmts = new Stack<>();
 
     private InTranslationBytecodeContainer bytecodeContainer = null;
 
@@ -41,8 +41,8 @@ public class CodeGenerator {
         /* This function should only be called for the global scope.  */
         assert bytecodeContainer == null;
         var outerBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
-                null,
-                null,
+                new IdentityHashMap<>(),
+                new IdentityHashMap<>(),
                 bytecodeContainer);
         /* Push.  */
         bytecodeContainer = outerBlob;
@@ -97,11 +97,10 @@ public class CodeGenerator {
             case IfStatement ifStmt -> {
                 // ovde je napisano kako se izvrsava if u slucaju kada nema else
                 // mi ne cuvamo nigde informacije o else unutar IfStmt pa zato ne mogu da pristupim tome i vidim da li postoji else
-
-                for(Expr expr : ifStmt.getExprList()) compileExpr(expr);
+                for (Expr expr : ifStmt.getExprList()) compileExpr(expr);
                 var skipThen = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
-                for(Statement statementEl : ifStmt.getStatementList()) compileStatement(statementEl);
+                for (Statement statementEl : ifStmt.getStatementList()) compileStatement(statementEl);
                 var skipPop = emit(Instruction.Code.JUMP, Integer.MAX_VALUE);
                 backpatch(skipThen);
                 emit(Instruction.Code.POP);
@@ -113,20 +112,17 @@ public class CodeGenerator {
                 }
             }
             case LoopStatement loopStmt -> {
-                var startIp = ip();  // Početak petlje
-                for(Expr expr : loopStmt.getExprList()) compileExpr(expr);
+                var startIp = ip();
+                for (Expr expr : loopStmt.getExprList()) compileExpr(expr);
                 var skipBody = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
 
-                // Dodavanje continue i break logike
                 continueStmts.push(new ArrayList<>());
                 exitStmts.push(new ArrayList<>());
 
-                for(Statement statementEl : loopStmt.getStatementList()) compileStatement(statementEl);
+                for (Statement statementEl : loopStmt.getStatementList()) compileStatement(statementEl);
                 emit(Instruction.Code.JUMP, jumpOffset(startIp));
 
-                // Backpatching for break and continue
-                backpatch(skipBody);
                 for (var stmt : exitStmts.pop()) backpatch(stmt);
                 for (var stmt : continueStmts.pop()) backpatch(stmt, startIp);
 
@@ -163,8 +159,8 @@ public class CodeGenerator {
                 emit(newVarSetter);
             }
             case FunctionCallStatement functionCallStatement -> {
-                Expr expr = new Expr(functionCallStatement.getLocation()); // IZMENITI
-                compileExpr(expr);
+              //  Expr expr = new Expr(functionCallStatement.getLocation()); // IZMENITI
+                //compileExpr(expr);
                 functionCallStatement.getArguments().forEach(this::compileExpr);
                 emit(Instruction.Code.FUNCTION_CALL, functionCallStatement.getArguments().size());
             }
@@ -182,7 +178,7 @@ public class CodeGenerator {
         var function = new Function();
         function.setFuncDef(fn);
         var functionBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
-                new IdentityHashMap<>(),
+                new IdentityHashMap<>(),// bytecodeContainer.getLocalSlots
                 new IdentityHashMap<>(),
                 bytecodeContainer);
         bytecodeContainer = functionBlob;
@@ -224,6 +220,7 @@ public class CodeGenerator {
     private Instruction findLocalInsn(InTranslationBytecodeContainer blob,
                                       SimpleStatement decl) {
         /* We already checked globals in getVarInsn.  */
+
         var locals = blob.getLocalSlots();
         var upvals = blob.getUpvalSlots();
         assert locals != null && upvals != null;
@@ -239,6 +236,8 @@ public class CodeGenerator {
             return new Instruction(Instruction.Code.GET_UPVALUE, upval.slotNr());
 
         /* It is.  */
+        if(blob.getPreviousBlob() == null)
+            return new Instruction(Instruction.Code.GET_UPVALUE, blob.getUpvalSlots().size());
         var inSuperscope = findLocalInsn(blob.getPreviousBlob(), decl);
         var upvalSlot = blob.getUpvalSlots().size();
 
@@ -326,41 +325,44 @@ public class CodeGenerator {
 
         }
     }
-    private IpInstruction emit(Instruction.Code instructionCode, long arg1) {
-        var insn = new Instruction(instructionCode, arg1);
-        var ip = bytecodeContainer.getCode().code().size();
-        return new IpInstruction(ip, insn);
+
+
+
+
+    private void backpatch(int instructionIndex) {
+        backpatch(instructionIndex, ip());
     }
-    private IpInstruction emit(Instruction.Code instructionCode) {
-        var insn = new Instruction(instructionCode);
-        var ip = bytecodeContainer.getCode().code().size(); ;
-        return new IpInstruction(ip, insn);
+
+    private void backpatch(int instructionIndex, int to) {
+        var instruction = bytecodeContainer.getCode().code().get(instructionIndex);
+        assert List.of(Instruction.Code.JUMP, Instruction.Code.JUMP_TRUE, Instruction.Code.JUMP_FALSE)
+                .contains(instruction.opcode());
+        var relIp = jumpOffset(to, instructionIndex);
+        instruction.setArg1(relIp);
     }
+
+    private int jumpOffset(int to) {
+        return jumpOffset(to, ip());
+    }
+
+    private int jumpOffset(int to, int from) {
+        return to - (from + 1);
+    }
+
+    private int emit(Instruction.Code instructionCode, long arg1) {
+        return emit(new Instruction(instructionCode, arg1));
+    }
+
+    private int emit(Instruction.Code instructionCode) {
+        return emit(new Instruction(instructionCode));
+    }
+
     private int emit(Instruction insn) {
         return bytecodeContainer.getCode().addInsn(insn);
     }
 
-    private int ip(){
+    private int ip() {
         return bytecodeContainer.getCode().code().size();
-        // vraca IP od sledece instrukcije
-    }
-
-
-    private void backpatch(IpInstruction ipInstruction) {
-        backpatch(ipInstruction, ip());
-    }
-
-    private void backpatch(IpInstruction ipInstruction, int to) {
-        assert(List.of(Instruction.Code.JUMP, Instruction.Code.JUMP_TRUE, Instruction.Code.JUMP_FALSE)
-                .contains(ipInstruction.getInstruction().opcode()));
-        var relIp = jumpOffset(to, ipInstruction.getIndexInStack());
-        ipInstruction.setIndexInStack(relIp);
-    }
-
-    private int jumpOffset(int to){return jumpOffset(to, ip());}
-
-    private int jumpOffset(int to, int from){
-        return to - (from + 1);
     }
 /*
     private Instruction getVarInsn(SimpleStatement decl) {
@@ -371,3 +373,4 @@ public class CodeGenerator {
 
 */
 }
+/*numero br = 1; action numero pr(yeahNah flag, numero x, numero y){numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;} pr(true, 1, 2);*/

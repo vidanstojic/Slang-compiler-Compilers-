@@ -1,22 +1,9 @@
-    numero proba = 5;
-    numero vodka = proba * 2 + proba^2 / proba;
-    yeahNah davaj = true || false && true;
-    spin(;proba<5;proba+1){
-        check(proba<3){
-        spin(numero i = 5; i < proba; i+1){
-            numero marko = 10;
-            replay(marko>9){
-                check(marko<10){
-                    numero vidan = 15;
-                }
-                check(!false){
-                replay(marko > 17 && !false){
-                    numero vidan = 100;
-                    }
-                }
-            }
-        }
-    }
+numero broj = 2;
+numero brojDrugi = 3;
+
+action numero funkcija(){
+    broj = 2;
+    getback broj;
 }
-    squad numero mare[2] = {1,2};
-    numero k = mare[0];
+replay(broj < 2){}
+dropmsg(broj);
