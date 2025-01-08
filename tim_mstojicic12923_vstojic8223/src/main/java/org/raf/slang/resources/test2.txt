@@ -1,13 +1,25 @@
-    numero proba = 5;
-    yeahNah davaj = true;
-    spin(;proba<5;proba+1){
-        check(proba<3){
-            numero marko = 10;
-            replay(marko>9){
-                check(marko<10){
-                    numero vidan = 15;
-                }
-            }
-        }
-    }
-    numero k = 2;
+   numero proba = 5;
+   numero br = 1;
+   action numero pr(yeahNah flag, numero x, numero y){numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;}
+   pr(true, 1, 2);
+       numero vodka = proba * 2 + proba^2 / proba;
+       yeahNah davaj = true || false && true;
+       spin(;proba<5;proba+1){
+           check(proba<3){
+               spin(numero i = 5; i < proba; i+1){
+                   numero marko = 10;
+                   replay(marko>9){
+                       check(marko<10){
+                           numero vidan = 15;
+                       }
+                       check(!false){
+                       replay(marko > 17 && !false){
+                           numero vidan = 100;
+                           }
+                       }
+                   }
+               }
+           }
+       }
+   squad numero mare[2] = {1,2};
+   numero k = mare[0];

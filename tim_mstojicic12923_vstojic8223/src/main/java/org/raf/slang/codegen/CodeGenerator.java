@@ -285,7 +285,7 @@ public class CodeGenerator {
             case Expr binaryExpr -> {
                 switch (binaryExpr.getOperation()) {
                     case ADD, SUB, MUL, DIV, MOD, CARET, GREATERTHAN, LESSTHAN,
-                         EQUALTO, LESSTHANOREQ, GREATERTHANOREQ, BITAND, BITOR, BANG -> {
+                         EQUALTO, LESSTHANOREQ, GREATERTHANOREQ, BITAND, BITOR -> {
 
                         var opsLhs = expr.getLhs();
                         var opsRhs = expr.getRhs();
@@ -302,10 +302,14 @@ public class CodeGenerator {
                             case LESSTHANOREQ -> Instruction.Code.BIT_LTE;
                             case EQUALTO -> Instruction.Code.BIT_ET;
                             case GREATERTHANOREQ -> Instruction.Code.BIT_GTE;
-                            case BANG -> Instruction.Code.NEGATE;
                             default ->
                                     throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
                         });
+                    }
+                    case BANG -> {
+                        var opsLhs = expr.getLhs();
+                        compileExpr(opsLhs);
+                        emit(Instruction.Code.NEGATE);
                     }
                     case AND, OR -> {
                         var opsLhs = expr.getLhs();
@@ -318,7 +322,6 @@ public class CodeGenerator {
                         compileExpr(opsRhs);
                         backpatch(skipOther);
                     }
-                    // treba poseban case za BANG
                     default -> throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
                 }
             }
