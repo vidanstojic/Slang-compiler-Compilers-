@@ -29,8 +29,7 @@ public class VM {
         for (;;) {
             var frame = callstack.getLast();
             var stack = frame.getOperandStack();
-            System.out.println("JEBEM VAM MAJKU SVIMA");
-            System.out.println("Velicina liste iz bytecode stack: "+ stack.size());
+          //  System.out.println("Velicina liste iz bytecode stack: "+ stack.size());
             var code = frame.getBytecodeContainer().code();
             var csts = frame.getBytecodeContainer().constantTable();
             var upvals = frame.getUpvalues();
@@ -51,6 +50,22 @@ public class VM {
                                 case BIT_MUL -> lhs * rhs;
                                 case BIT_DIV -> lhs / rhs;
                                 case BIT_CR -> Math.pow(lhs, rhs);
+                                default ->
+                                        throw new IllegalArgumentException(op.name());
+                            }));
+                }
+                case BIT_GT, BIT_LT, BIT_GTE, BIT_LTE, BIT_ET -> {
+                    var rhs = ((Value.Number) stack.getLast()).number();
+                    stack.removeLast();
+                    var lhs = ((Value.Number) stack.getLast()).number();
+                    stack.removeLast();
+                    stack.add(new Value.Bool
+                            (switch(op) {
+                                case BIT_GT -> lhs > rhs;
+                                case BIT_LT -> lhs < rhs;
+                                case BIT_GTE -> lhs >= rhs;
+                                case BIT_LTE -> lhs <= rhs;
+                                case BIT_ET -> lhs == rhs;
                                 default ->
                                         throw new IllegalArgumentException(op.name());
                             }));
@@ -104,9 +119,10 @@ public class VM {
                    a Java null in place of a return value, or really any
                    arbitrary value, as it will never actually be read.  */
                     final var retval = retVoid ? null : stack.getLast();
-                    ip = callstack.getLast().getPrevIp();
-                    callstack.removeLast();
+                //    ip = callstack.getLast().getPrevIp();
+
                     callstack.getLast().getOperandStack().add(retval);
+                   // callstack.removeLast();
                 }
                 case FUNCTION_CALL -> {
                     final var aty = insn.getArg1();

@@ -26,6 +26,13 @@ public sealed interface Value {
         }
     }
 
+    public record Bool(boolean bool) implements Value{
+        @Override
+        public void print(PrintStream out) {
+            out.print(bool);
+        }
+    }
+
     /** This language supports function nesting.  As a result of the laziness
      of the author, however, these values are all immutable.  */
     public record Closure(BytecodeContainer code,

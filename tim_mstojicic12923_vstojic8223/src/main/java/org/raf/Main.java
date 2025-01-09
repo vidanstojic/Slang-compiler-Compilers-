@@ -58,7 +58,7 @@ public class Main {
 
         if (hadError) System.exit(65);
         if (hadRuntimeError) System.exit(70);
-        run(CharStreams.fromFileName(path));
+        //run(CharStreams.fromFileName(path));
         if (slang.hadError()) System.exit(65);
         if (slang.hadRuntimeError()) System.exit(70);
     }
@@ -115,7 +115,7 @@ public class Main {
         /* The compiler cannot emit errors.  */
         assert !slang.hadError();
 
-      //  vm.run(bytecode);
+        vm.run(bytecode);
     }
 
 }
