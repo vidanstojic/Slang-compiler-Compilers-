@@ -16,6 +16,7 @@ public class InTranslationBytecodeContainer {
     public record UpvalSlotInfo(int slotNr, UpvalueMapEntry entry) {}
     private final IdentityHashMap<SimpleStatement, UpvalSlotInfo> upvalSlots;
     private final InTranslationBytecodeContainer previousBlob;
+
     private int localDepth = 0;
     private int maxLocalDepth = 0;
 

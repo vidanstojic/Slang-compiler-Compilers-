@@ -75,6 +75,8 @@ public class CodeGenerator {
     private Instruction declareVariable(SimpleStatement declaration) {
         if (bytecodeContainer.getPreviousBlob() == null) {
             /* New global variable.  */
+            var newVarId = bytecodeContainer.getLocalDepth();
+            var oldId = bytecodeContainer.getLocalSlots().put(declaration, newVarId);
             return new Instruction(Instruction.Code.SET_GLOBAL, slang.declareGlobal(declaration));
         } else {
             var newVarId = bytecodeContainer.getLocalDepth();
@@ -225,20 +227,27 @@ public class CodeGenerator {
         var upvals = blob.getUpvalSlots();
         assert locals != null && upvals != null;
 
-        var local = locals.get(decl);
+        Integer local = null;
+        SimpleStatement localSimpleStatement = null;
+        for (SimpleStatement simpleStatementEl : locals.keySet()){
+            if(simpleStatementEl.getName().equals(decl.getName())){
+                local = locals.get(simpleStatementEl);
+                localSimpleStatement = simpleStatementEl;
+            }
+        }
         if (local != null)
             return new Instruction(Instruction.Code.GET_LOCAL, local);
 
         /* So, this is a upvalue.  But is it new?  */
-        var upval = blob.getUpvalSlots().get(decl);
+        var upval = blob.getUpvalSlots().get(localSimpleStatement);// osigurati se da localSimpleStatement nije ostao null
         if (upval != null)
             /* No, it isn't.  */
             return new Instruction(Instruction.Code.GET_UPVALUE, upval.slotNr());
 
-        /* It is.  */
-        if(blob.getPreviousBlob() == null)
-            return new Instruction(Instruction.Code.GET_UPVALUE, blob.getUpvalSlots().size());
-        var inSuperscope = findLocalInsn(blob.getPreviousBlob(), decl);
+//        /* It is.  */
+//        if(blob.getPreviousBlob() == null)
+//            return new Instruction(Instruction.Code.GET_UPVALUE, blob.getUpvalSlots().size());
+        var inSuperscope = findLocalInsn(blob.getPreviousBlob(), localSimpleStatement);
         var upvalSlot = blob.getUpvalSlots().size();
 
         var upvalME = new UpvalueMapEntry(switch (inSuperscope.getOpcode()) {
@@ -248,7 +257,7 @@ public class CodeGenerator {
         }, Math.toIntExact(inSuperscope.getArg1()));
 
         var oldSlot = blob.getUpvalSlots()
-                .put(decl, new InTranslationBytecodeContainer.UpvalSlotInfo(upvalSlot, upvalME));
+                .put(localSimpleStatement, new InTranslationBytecodeContainer.UpvalSlotInfo(upvalSlot, upvalME));
         assert oldSlot == null;
         return new Instruction(Instruction.Code.GET_UPVALUE, upvalSlot);
     }

@@ -18,3 +18,4 @@ public record  BytecodeContainer(List<Instruction> code,
         return newInsnIp;
     }
 }
+// instruction pointer---> ono sto se nalazi na vrhu steka
