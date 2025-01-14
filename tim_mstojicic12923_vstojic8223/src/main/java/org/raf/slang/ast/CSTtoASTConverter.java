@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.raf.slang.Slang;
+import slang.parser.SlangLexer;
 import slang.parser.SlangParser;
 import slang.parser.SlangVisitor;
 
@@ -502,121 +503,186 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         return new ScanStatement(getLocation(ctx), arguments);
     }
 
+//    @Override
+//    public Tree visitExpr(SlangParser.ExprContext ctx) {
+//        var subexpr = (Expr) visit(ctx.getChild(0));
+//        Expr.Operation exprOp = null;
+//        if (ctx.getParent().children.toString().contains("!")) {
+//            exprOp = Expr.Operation.BANG;
+//            var loc = subexpr.getLocation().span(subexpr.getLocation());
+//            //subexpr.setOperation(exprOp);
+//            return new Expr(loc, subexpr, exprOp);
+//        }
+//
+//        if (exprOp == null){
+//
+//            return subexpr;
+//        }else {
+//            var left = (Expr) visit(ctx.relationalOperands());
+//
+//            var loc = left.getLocation().span(subexpr.getLocation());
+//        }
+//        return subexpr;
+//    }
+
     @Override
     public Tree visitExpr(SlangParser.ExprContext ctx) {
-        var subexpr = (Expr) visit(ctx.getChild(0));
-        Expr.Operation exprOp = null;
-        if (ctx.getParent().children.toString().contains("!")) {
-            exprOp = Expr.Operation.BANG;
-            var loc = subexpr.getLocation().span(subexpr.getLocation());
-            //subexpr.setOperation(exprOp);
-            return new Expr(loc, subexpr, exprOp);
-        }
-
-        if (exprOp == null){
-
-            return subexpr;
-        }else {
-            var left = (Expr) visit(ctx.relationalOperands());
-
-            var loc = left.getLocation().span(subexpr.getLocation());
-        }
-        return subexpr;
+        return (Expr) visit(ctx.orExpression());
     }
 
     @Override
-    public Tree visitRelationalOperands(SlangParser.RelationalOperandsContext ctx) {
-        if (ctx.relationalOperands() == null) {
-            return visit(ctx.addSubOperands());
+    public Tree visitOrExpression(SlangParser.OrExpressionContext ctx) {
+        var value = (Expr) visit(ctx.initial);
+
+        assert ctx.op.size() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            Expr.Operation exprOp;
+            if (op.getType() == SlangLexer.OR) {
+                exprOp = Expr.Operation.OR;
+            } else {
+                throw new IllegalArgumentException("unhandled expr op " + op);
+            }
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, List.of(value, rhs));
         }
-
-        var left = (Expr) visit(ctx.relationalOperands());
-        var right = (Expr) visit(ctx.addSubOperands());
-
-        var operatorText = ctx.getChild(1).getText();
-        Expr.Operation exprOp;
-        if(Objects.equals(operatorText, ">"))
-            exprOp = Expr.Operation.GREATERTHAN;
-        else if(Objects.equals(operatorText, "<"))
-            exprOp = Expr.Operation.LESSTHAN;
-        else if (Objects.equals(operatorText, ">="))
-            exprOp = Expr.Operation.GREATERTHANOREQ;
-        else if(Objects.equals(operatorText, "<="))
-            exprOp = Expr.Operation.LESSTHANOREQ;
-        else if(Objects.equals(operatorText, "=="))
-            exprOp = Expr.Operation.EQUALTO;
-        else if (Objects.equals(operatorText, "&&"))
-            exprOp = Expr.Operation.AND;
-        else if (Objects.equals(operatorText, "||"))
-            exprOp = Expr.Operation.OR;
-        else
-            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
-
-        var loc = left.getLocation().span(right.getLocation());
-        return new Expr(loc, exprOp, left, right);
+        return value;
     }
 
     @Override
-    public Tree visitAddSubOperands(SlangParser.AddSubOperandsContext ctx) {
-        if (ctx.addSubOperands() == null) {
-            return visit(ctx.mulDivOperands());
+    public Tree visitAndExpression(SlangParser.AndExpressionContext ctx) {
+        var value = (Expr) visit(ctx.initial);
+
+        assert ctx.op.size() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            Expr.Operation exprOp;
+            if (op.getType() == SlangLexer.AND) {
+                exprOp = Expr.Operation.AND;
+            } else {
+                throw new IllegalArgumentException("unhandled expr op " + op);
+            }
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, List.of(value, rhs));
         }
-
-        var left = (Expr) visit(ctx.addSubOperands());
-        var right = (Expr) visit(ctx.mulDivOperands());
-
-        var operatorText = ctx.getChild(1).getText();
-        Expr.Operation exprOp;
-        if(Objects.equals(operatorText, "+"))
-            exprOp = Expr.Operation.ADD;
-        else if(Objects.equals(operatorText, "-"))
-            exprOp = Expr.Operation.SUB;
-        else
-            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
-
-        var loc = left.getLocation().span(right.getLocation());
-        return new Expr(loc, exprOp, left, right);
+        return value;
     }
 
     @Override
-    public Tree visitMulDivOperands(SlangParser.MulDivOperandsContext ctx) {
-        if (ctx.mulDivOperands() == null) {
-            return visit(ctx.powOperands());
+    public Tree visitCompareExpression(SlangParser.CompareExpressionContext ctx) {
+        var value = (Expr) visit(ctx.initial);
+
+        assert ctx.op.size() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            var exprOp = switch (op.getType()) {
+                case SlangLexer.EQUALTO -> Expr.Operation.EQUALTO;
+                case SlangLexer.NOTEQUAL -> Expr.Operation.NOT_EQUALS;
+                default -> throw new IllegalArgumentException("unhandled expr op " + op);
+            };
+
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, List.of(value, rhs));
         }
-
-        var left = (Expr) visit(ctx.mulDivOperands());
-        var right = (Expr) visit(ctx.powOperands());
-
-        var operatorText = ctx.getChild(1).getText();
-        Expr.Operation exprOp;
-        if(Objects.equals(operatorText, "*"))
-            exprOp = Expr.Operation.MUL;
-        else if(Objects.equals(operatorText, "/"))
-            exprOp = Expr.Operation.DIV;
-        else
-            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
-
-        var loc = left.getLocation().span(right.getLocation());
-        return new Expr(loc, exprOp, left, right);
+        return value;
     }
 
     @Override
-    public Tree visitPowOperands(SlangParser.PowOperandsContext ctx) {
-        if (ctx.powOperands() == null) {
-            return visit(ctx.core());
+    public Tree visitRelationalExpression(SlangParser.RelationalExpressionContext ctx) {
+        var value = (Expr) visit(ctx.initial);
+
+        assert ctx.op.size() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            var exprOp = switch (op.getType()) {
+                case SlangLexer.LESSTHAN -> Expr.Operation.LESSTHAN;
+                case SlangLexer.LESSTHANOREQ -> Expr.Operation.LESSTHANOREQ;
+                case SlangLexer.GREATERTHAN -> Expr.Operation.GREATERTHAN;
+                case SlangLexer.GREATERTHANOREQ -> Expr.Operation.GREATERTHANOREQ;
+                default -> throw new IllegalArgumentException("unhandled expr op " + op);
+            };
+
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, List.of(value, rhs));
         }
-        var left = (Expr) visit(ctx.powOperands());
-        var right = (Expr) visit(ctx.core());
+        return value;
+    }
 
-        var operatorText = ctx.getChild(1).getText();
-        Expr.Operation exprOp;
-        if(Objects.equals(operatorText, "^"))
-            exprOp = Expr.Operation.CARET;
-        else
-            throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
+    @Override
+    public Tree visitAdditionExpression(SlangParser.AdditionExpressionContext ctx) {
+        var value = (Expr) visit(ctx.initial);
 
-        var loc = left.getLocation().span(right.getLocation());
-        return new Expr(loc, exprOp, left, right);
+        assert ctx.op.size() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            var exprOp = switch (op.getType()) {
+                case SlangLexer.ADD -> Expr.Operation.ADD;
+                case SlangLexer.SUB -> Expr.Operation.SUB;
+                default -> throw new IllegalArgumentException("unhandled expr op " + op);
+            };
+
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, List.of(value, rhs));
+        }
+        return value;
+    }
+
+    @Override
+    public Tree visitMultiplicationExpression(SlangParser.MultiplicationExpressionContext ctx) {
+        var value = (Expr) visit(ctx.initial);
+
+        assert ctx.op.size() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            var exprOp = switch (op.getType()) {
+                case SlangLexer.MUL -> Expr.Operation.MUL;
+                case SlangLexer.DIV -> Expr.Operation.DIV;
+                case SlangLexer.MOD -> Expr.Operation.MOD;
+                default -> throw new IllegalArgumentException("unhandled expr op " + op);
+            };
+
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, List.of(value, rhs));
+        }
+        return value;
+    }
+
+    @Override
+    public Tree visitUnaryExpression(SlangParser.UnaryExpressionContext ctx) {
+        // Get the operator and the value expression
+        var operator = ctx.unaryOp;
+        var value = (Expr) visit(ctx.core());
+
+        if (operator != null) {
+            // Map the operator to its corresponding operation
+            var operation = switch (operator.getType()) {
+                case SlangLexer.SUB -> Expr.Operation.NEGATE;
+                case SlangLexer.BANG -> Expr.Operation.BANG;
+                default -> throw new AssertionError("Unknown unary operator: " + operator.getText());
+            };
+
+            // Return the unary expression
+            return new Expr(
+                    getLocation(ctx).span(getLocation(operator)),
+                    operation,
+                    List.of(value)
+            );
+        }
+
+        // Return the value directly if no operator
+        return value;
     }
 
     @Override

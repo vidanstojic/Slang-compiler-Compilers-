@@ -311,11 +311,9 @@ public class CodeGenerator {
             case Expr binaryExpr -> {
                 switch (binaryExpr.getOperation()) {
                     case ADD, SUB, MUL, DIV, MOD, CARET, GREATERTHAN, LESSTHAN,
-                         EQUALTO, LESSTHANOREQ, GREATERTHANOREQ, BITAND, BITOR -> {
+                         EQUALTO, LESSTHANOREQ, GREATERTHANOREQ-> {
 
-                        var opsLhs = expr.getLhs();
                         var opsRhs = expr.getRhs();
-                        compileExpr(opsLhs);
                         compileExpr(opsRhs);
                         emit(switch (binaryExpr.getOperation()) {
                             case ADD -> Instruction.Code.BIT_PLUS;
@@ -333,15 +331,13 @@ public class CodeGenerator {
                         });
                     }
                     case BANG -> {
-                        var opsLhs = expr.getLhs();
-                        compileExpr(opsLhs);
-                        emit(Instruction.Code.NEGATE);
+//                        var opsLhs = expr.getLhs();
+//                        compileExpr(opsLhs);
+//                        emit(Instruction.Code.NEGATE);
                     }
                     case AND, OR -> {
-                        var opsLhs = expr.getLhs();
                         var opsRhs = expr.getRhs();
                         var operation = expr.getOperation();
-                        compileExpr(opsLhs);
                         var skipOther = emit(operation == Expr.Operation.AND
                                 ? Instruction.Code.JUMP_FALSE : Instruction.Code.JUMP_TRUE, Integer.MAX_VALUE);
                         emit(Instruction.Code.POP);

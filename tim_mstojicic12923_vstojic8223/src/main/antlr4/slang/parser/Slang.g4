@@ -31,9 +31,7 @@ array
     : ARRAY_KEYWORD variableType ID '[' (NUMBER_LITERAL)?']' '=' '{' expr (','expr)* '}'';'
     ;
 
-ifStatement
-    : IF_KEYWORD '(' ((BANG expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'
-    ;
+ifStatement: IF_KEYWORD '(' expr ')' then = statement (ELSE_KEYWORD otherwise = statement)? ;
 
 elseStatement
     : ELSE_KEYWORD '{'(statement)* '}'
@@ -65,32 +63,14 @@ scanStatement
     : SCAN_KEYWORD '('expr')'';'
     ;
 
-expr
-    : functionCallStatement
-    | expr (AND | OR) relationalOperands
-    | BANG  expr
-    | relationalOperands
-    ;
-
-relationalOperands
-    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO | AND | OR) addSubOperands
-    | addSubOperands
-    ;
-
-addSubOperands
-    : addSubOperands(ADD | SUB) mulDivOperands
-    | mulDivOperands
-    ;
-
-mulDivOperands
-    : mulDivOperands (MUL | DIV) powOperands
-    | powOperands
-    ;
-
-powOperands
-    : powOperands CARET core
-    | core
-    ;
+expr: orExpression ;
+orExpression: initial=andExpression (op+=OR rest+=andExpression)* ;
+andExpression: initial=compareExpression (op+=AND rest+=compareExpression)* ;
+compareExpression: initial=relationalExpression (op+=(EQUALTO | NOTEQUAL) rest+=relationalExpression)* ;
+relationalExpression: initial=additionExpression (op+=(LESSTHAN | LESSTHANOREQ | GREATERTHAN | GREATERTHANOREQ) rest+=additionExpression)* ;
+additionExpression: initial=multiplicationExpression (op+=(ADD | SUB) rest+=multiplicationExpression)* ;
+multiplicationExpression: initial=unaryExpression (op+=(MUL | DIV) rest+=unaryExpression)* ;
+unaryExpression: unaryOp=(SUB | BANG)? core;
 
 core
     : NUMBER_LITERAL

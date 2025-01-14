@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.raf.slang.Parser;
 import org.raf.slang.Scanner;
 import org.raf.slang.Slang;
-import org.raf.slang.TypeCheck;
+//import org.raf.slang.TypeCheck;
 import org.raf.slang.ast.ASTNodePrinter;
 import org.raf.slang.ast.CSTtoASTConverter;
 import org.raf.slang.ast.StatementList;
@@ -105,7 +105,7 @@ public class Main {
         program.nodePrint(pp);
         if (slang.hadError()) return;
 
-        new TypeCheck(slang).typecheck(program);
+//        new TypeCheck(slang).typecheck(program);
         System.out.println("tAST:");
         program.nodePrint(pp);
         if (slang.hadError()) return;

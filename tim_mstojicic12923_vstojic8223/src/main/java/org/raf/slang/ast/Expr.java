@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Getter
@@ -14,76 +16,67 @@ import java.util.Objects;
 public class Expr extends Tree{
 
     public enum Operation {
-        ADD("+"),
-        SUB("-"),
-        MUL("*"),
-        DIV("/"),
-        MOD("%"),
-        CARET("^"),
-        BITOR("|"),
-        BITAND("&"),
-        OR("||"),
-        AND("&&"),
-        NOTEQUAL ("!="),
-        GREATERTHAN(">"),
-        LESSTHAN("<"),
-        BANG("!"),
-        EQUALTO("=="),
-        LESSTHANOREQ("<="),
-        GREATERTHANOREQ(">="),
+        ADD("+", 2),
+        SUB("-", 2),
+
+        MUL("*", 2),
+        DIV("/", 2),
+        MOD("%", 2),
+        CARET("^", 2),
+        NEGATE("-", 1),
+        BANG("!", 1),
+        ASSIGN("=", 2),
+        OR("||", 2),
+        AND("&&", 2),
+        EQUALTO("==", 2),
+        NOT_EQUALS("!=", 2),
+        LESSTHAN("<", 2),
+        LESSTHANOREQ("<=", 2),
+        GREATERTHAN(">", 2),
+        GREATERTHANOREQ(">=", 2),
 
         /** A vector or a number or a variable.  */
-        VALUE(null),
+        VALUE(null, 0),
         ;
 
+        @Getter
         public final String label;
+        @Getter
+        private final int opCount;
 
-        Operation(String label) {
+        Operation(String label, int operationCount) {
             this.label = label;
+            this.opCount = operationCount;
         }
     }
 
     private Operation operation;
-    private Expr lhs;
+    private List<Expr> operands;
     private Expr rhs;
 
-    private VariableType resultType;
-
-    public Expr(Location location, Operation operation, Expr lhs, Expr rhs) {
+    public Expr(Location location, Operation operation, List<Expr> operands) {
         super(location);
-        if (operation == Operation.VALUE)
-            throw new IllegalArgumentException("cannot construct a value like that");
+        operands.forEach (Objects::requireNonNull);
+        assert ((operands.size () == operation.getOpCount ())
+                || (operation.getOpCount () <= 0
+                && operands.size () >= -operation.getOpCount ()))
+                : "Wrong operand count";
+
         this.operation = operation;
-        this.lhs = Objects.requireNonNull(lhs);
-        this.rhs = Objects.requireNonNull(rhs);
+        this.operands = new ArrayList<>(operands);
     }
 
-    public Expr(Location location)
+    protected Expr(Location location)
     {
         super(location);
         this.operation = Operation.VALUE;
-    }
-
-    protected Expr(Location location, Expr subexpr)
-    {
-        super(location);
-        this.lhs = subexpr;
-        this.operation = subexpr.getOperation();
-    }
-    protected Expr(Location location, Expr subexpr, Operation operation)
-    {
-        super(location);
-        this.lhs = subexpr;
-        this.operation = operation;
     }
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
         pp.node(operation.label,
                 () -> {
-                    lhs.nodePrint(pp);
-                    if (rhs!=null)
-                        rhs.nodePrint(pp);
+                    operands.forEach (x -> x.nodePrint (pp));
                 });
     }
 }
