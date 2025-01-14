@@ -115,7 +115,7 @@ public class Main {
         /* The compiler cannot emit errors.  */
         assert !slang.hadError();
 
-        vm.run(bytecode);
+    //    vm.run(bytecode);
     }
 
 }

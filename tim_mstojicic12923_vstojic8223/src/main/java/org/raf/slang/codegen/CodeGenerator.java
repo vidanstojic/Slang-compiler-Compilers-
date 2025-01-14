@@ -9,10 +9,7 @@ import org.raf.slang.Slang;
 import org.raf.slang.ast.*;
 import org.raf.slang.vm.*;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 //numero br = 1; action numero pr(yeahNah flag, numero x, numero y){numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;} pr(true, 1, 2);
 public class CodeGenerator {
@@ -20,6 +17,7 @@ public class CodeGenerator {
 
     private Stack<List<Integer>> continueStmts = new Stack<>();
     private Stack<List<Integer>> exitStmts = new Stack<>();
+    private HashMap<String, FunctionDefinition> functionDefMap = new HashMap<>();
 
     private InTranslationBytecodeContainer bytecodeContainer = null;
 
@@ -116,9 +114,19 @@ public class CodeGenerator {
                 backpatch(skipPop);
             }
             case ElseStatement elseStmt -> {
+                InTranslationBytecodeContainer elseBlob = null;
+                if (!elseStmt.getStatementList().isEmpty()){
+                    elseBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
+                            new IdentityHashMap<>(),// bytecodeContainer.getLocalSlots
+                            new IdentityHashMap<>(),
+                            bytecodeContainer);
+                    bytecodeContainer = elseBlob;
+                }
                 for(Statement statementEl : elseStmt.getStatementList()) {
                     compileStatement(statementEl);
                 }
+                /**POP**/
+                if (elseBlob != null) bytecodeContainer = bytecodeContainer.getPreviousBlob();
             }
             case LoopStatement loopStmt -> {
                 var startIp = ip();
@@ -173,14 +181,23 @@ public class CodeGenerator {
                     }
                 };
                 var newVarSetter = declareVariable(new SimpleStatement(functionDefinition.getLocation(), functionDefinition.getName(), null,variableType));
-                var fnId = compileFunction(functionDefinition);
-                emit(Instruction.Code.BUILD_CLOSURE, fnId);
+//                var fnId = compileFunction(functionDefinition);
+//                emit(Instruction.Code.BUILD_CLOSURE, fnId);
+
+//                var function = new Function();
+//                function.setFuncDef(functionDefinition);
+//                var fnId = slang.addFunction(function);
+                functionDefMap.put(functionDefinition.getName(), functionDefinition);
+                //    var fnId = compileFunction(functionDefinition);
+//                emit(Instruction.Code.BUILD_CLOSURE, fnId);
                 emit(newVarSetter);
             }
             case FunctionCallStatement functionCallStatement -> {
               //  Expr expr = new Expr(functionCallStatement.getLocation()); // IZMENITI
                 //compileExpr(expr);
                 functionCallStatement.getArguments().forEach(this::compileExpr);
+                if (functionDefMap.containsKey(functionCallStatement.getName()))
+                    compileFunction(functionDefMap.get(functionCallStatement.getName()));
                 emit(Instruction.Code.FUNCTION_CALL, functionCallStatement.getArguments().size());
             }
             case ArrayStatement arrayStmt -> {
@@ -193,7 +210,7 @@ public class CodeGenerator {
         }
     }
 
-    private int compileFunction(FunctionDefinition fn) {
+    private void compileFunction(FunctionDefinition fn) {
         var function = new Function();
         function.setFuncDef(fn);
         var functionBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
@@ -221,17 +238,18 @@ public class CodeGenerator {
                 .values()
                 .forEach(s -> { upvals[s.slotNr()] = s.entry(); });
 
-        /* Pop.  */
-        bytecodeContainer = bytecodeContainer.getPreviousBlob();
-
         if (fn.getValueOfReturnData() != null) {
             compileExpr(fn.getValueOfReturnData());
             emit(Instruction.Code.RET);
         } else
             emit(Instruction.Code.RET_VOID);
+        /* Pop.  */
+        bytecodeContainer = bytecodeContainer.getPreviousBlob();
 
 
-        return newFnId;
+
+
+//        return newFnId;
     }
 
 
@@ -250,6 +268,7 @@ public class CodeGenerator {
             if(simpleStatementEl.getName().equals(decl.getName())){
                 local = locals.get(simpleStatementEl);
                 localSimpleStatement = simpleStatementEl;
+                break;
             }
         }
         if (local != null)
@@ -264,7 +283,7 @@ public class CodeGenerator {
 //        /* It is.  */
 //        if(blob.getPreviousBlob() == null)
 //            return new Instruction(Instruction.Code.GET_UPVALUE, blob.getUpvalSlots().size());
-        var inSuperscope = findLocalInsn(blob.getPreviousBlob(), localSimpleStatement);
+        var inSuperscope = findLocalInsn(blob.getPreviousBlob(), decl);
         var upvalSlot = blob.getUpvalSlots().size();
 
         var upvalME = new UpvalueMapEntry(switch (inSuperscope.getOpcode()) {
@@ -312,9 +331,10 @@ public class CodeGenerator {
                 switch (binaryExpr.getOperation()) {
                     case ADD, SUB, MUL, DIV, MOD, CARET, GREATERTHAN, LESSTHAN,
                          EQUALTO, LESSTHANOREQ, GREATERTHANOREQ-> {
-
-                        var opsRhs = expr.getRhs();
-                        compileExpr(opsRhs);
+                        for (Expr expr1 : binaryExpr.getOperands())
+                            compileExpr(expr1);
+//                        var opsRhs = expr.getRhs();
+//                        compileExpr(opsRhs);
                         emit(switch (binaryExpr.getOperation()) {
                             case ADD -> Instruction.Code.BIT_PLUS;
                             case SUB -> Instruction.Code.BIT_MINUS;
