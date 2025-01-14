@@ -28,7 +28,7 @@ variableType
     | VOID_KEYWORD
     ;
 array
-    : ARRAY_KEYWORD variableType ID '[' (NUMBER_LITERAL)?']' '=' '{' expr (','expr)* '}'';'
+    : ARRAY_KEYWORD variableType ID '[' (NUMBER_LITERAL)?']' '=' '{' expr (','expr)* '}' ';'
     ;
 
 ifStatement
@@ -57,47 +57,33 @@ functionCallStatement
     : ID '(' (expr? (',' expr)*?) ')' ';'
     ;
 
-printStatement
-    : PRINT_KEYWORD '(' expr(','expr)*')'';'
+printStatementz
+    : PRINT_KEYWORD '(' expr(','expr)*')' ';'
     ;
 
 scanStatement
-    : SCAN_KEYWORD '('expr')'';'
+    : SCAN_KEYWORD '('expr')' ';'
     ;
 
-expr
-    : functionCallStatement
-    | expr (AND | OR) relationalOperands
-    | BANG  expr
-    | relationalOperands
-    ;
+expr: orExpression ;
+orExpression: initial=andExpression (op+=OR rest+=andExpression)* ;
+andExpression: initial=compareExpression (op+=AND rest+=compareExpression)* ;
+compareExpression: initial=relationalExpression (op+=(EQUALTO | NOTEQUAL) rest+=relationalExpression)* ;
+relationalExpression: initial=additionExpression (op+=(LESSTHAN | LESSTHANOREQ | GREATERTHAN | GREATERTHANOREQ) rest+=additionExpression)* ;
+additionExpression: initial=multiplicationExpression (op+=(ADD | SUB) rest+=multiplicationExpression)* ;
+multiplicationExpression: initial=unaryExpression (op+=(MUL | DIV | MOD) rest+=unaryExpression)* ;
+unaryExpression: unaryOp=(SUB | BANG)? unarySuffix;
+unarySuffix: core;
 
-relationalOperands
-    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO | AND | OR) addSubOperands
-    | addSubOperands
-    ;
-
-addSubOperands
-    : addSubOperands(ADD | SUB) mulDivOperands
-    | mulDivOperands
-    ;
-
-mulDivOperands
-    : mulDivOperands (MUL | DIV) powOperands
-    | powOperands
-    ;
-
-powOperands
-    : powOperands CARET core
-    | core
-    ;
-
+//expressionList: (expr (',' expr)*)?;
 core
     : NUMBER_LITERAL
     | BOOLEAN_LITERAL
-    | ID
     | ID '['NUMBER_LITERAL ']'
+    | ID
+    | '(' expr ')'
     ;
+
 block: '{' statement* '}';
 
 
