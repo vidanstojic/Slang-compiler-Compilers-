@@ -125,10 +125,18 @@ public class TypeCheck {
                 expr_.setResultType(slang.getBoolType());
                 return expr_;
             }
-            case ADD, DIV, MUL, CARET, SUB, MOD, NOT_EQUALS, EQUALTO, GREATERTHAN, GREATERTHANOREQ, LESSTHAN, LESSTHANOREQ -> {
+            case ADD, DIV, MUL, CARET, SUB, MOD -> {
                 for (Expr operand : expr_.getOperands()) {
                     operand = typecheck(operand);
                     operand = tryAndConvert(slang.getNumberType(), operand);
+                }
+                expr_.setResultType(slang.getNumberType());
+                return expr_;
+            }
+            case NOT_EQUALS, EQUALTO, GREATERTHAN, GREATERTHANOREQ, LESSTHAN, LESSTHANOREQ ->{
+                for (Expr operand : expr_.getOperands()) {
+                    operand = typecheck(operand);
+                    operand = tryAndConvert(slang.getBoolType(), operand);
                 }
                 expr_.setResultType(slang.getNumberType());
                 return expr_;
