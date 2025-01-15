@@ -8,11 +8,13 @@ public final class LoopStatement extends Statement{
 
     private List<Expr> exprList;
     private List<Statement> statementList;
+    private SimpleStatement iterator;
 
-    public LoopStatement(Location location, List<Expr> exprList, List<Statement> statementList) {
+    public LoopStatement(Location location, List<Expr> exprList, List<Statement> statementList, SimpleStatement iterator) {
         super(location);
         this.exprList = exprList;
         this.statementList = statementList;
+        this.iterator = iterator;
     }
 
     @Override

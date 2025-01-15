@@ -1,7 +1,1 @@
-numero a = 10; // validno
-yeahNah b = true; // validno
-empty c; // validno (void promenljiva)
-numero d; // validno (nije inicijalizovano)
-
-numero e = true; // greška: nekompatibilni tipovi
-yeahNah f = 123; // greška: nekompatibilni tipovi
+yeahNah davaj = false && false || true;

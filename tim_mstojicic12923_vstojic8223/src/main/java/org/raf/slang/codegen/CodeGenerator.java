@@ -130,6 +130,8 @@ public class CodeGenerator {
             }
             case LoopStatement loopStmt -> {
                 var startIp = ip();
+                if (loopStmt.getIterator() != null)
+                    declareVariable(loopStmt.getIterator());
                 for (Expr expr : loopStmt.getExprList()) compileExpr(expr);
                 var skipBody = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
@@ -356,19 +358,68 @@ public class CodeGenerator {
 //                        emit(Instruction.Code.NEGATE);
                     }
                     case AND, OR -> {
-                        var opsRhs = expr.getRhs();
-                        var operation = expr.getOperation();
-                        var skipOther = emit(operation == Expr.Operation.AND
-                                ? Instruction.Code.JUMP_FALSE : Instruction.Code.JUMP_TRUE, Integer.MAX_VALUE);
-                        emit(Instruction.Code.POP);
-                        compileExpr(opsRhs);
-                        backpatch(skipOther);
+//                        for (Expr expr1 : expr.getOperands()) {
+                            var returnType = trueOrFalse(expr);
+                        System.out.println(returnType);
+                        //ova gornja metoda za sada vraca zeljeni booltype, to jest vraca sto treba
+                        //problem je sto ne znam kako dole da ispravim da bi radio isrpavno jump
+                            var operation = expr.getOperation();
+                            var skipOther = emit(operation == Expr.Operation.AND
+                                    ? Instruction.Code.JUMP_FALSE : Instruction.Code.JUMP_TRUE, Integer.MAX_VALUE);
+                            emit(Instruction.Code.POP);
+//                            compileExpr(expr1);
+                            backpatch(skipOther);
+//                        }
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
                 }
             }
 
         }
+    }
+    private Expr trueOrFalse(Expr expr){
+        if (expr.getOperation().equals(Expr.Operation.AND)){
+            Expr lhs = expr.getOperands().get(0);
+            if (lhs.getOperands() != null)
+                lhs = trueOrFalse(lhs);
+            Expr rhs = expr.getOperands().get(1);
+            if (rhs.getOperands() != null)
+                rhs = trueOrFalse(rhs);
+            if (rhs instanceof BoolLiteral && lhs instanceof BoolLiteral){
+                BoolLiteral boolRhs = (BoolLiteral) rhs;
+                BoolLiteral boolLhs = (BoolLiteral) lhs;
+                boolean rhsValue = boolRhs.isBool();
+                boolean lhsValue = boolLhs.isBool();
+                if (rhsValue == lhsValue)
+                    return boolLhs;
+                else {
+                    if (!lhsValue)
+                        return boolLhs;
+                    else
+                        return boolRhs;
+                }
+            }
+        }else {
+            Expr lhs = expr.getOperands().get(0);
+            if (lhs.getOperands() != null)
+                lhs = trueOrFalse(lhs);
+            Expr rhs = expr.getOperands().get(1);
+            if (rhs.getOperands() != null)
+                rhs = trueOrFalse(rhs);
+            if (rhs instanceof BoolLiteral && lhs instanceof BoolLiteral){
+                BoolLiteral boolRhs = (BoolLiteral) rhs;
+                BoolLiteral boolLhs = (BoolLiteral) lhs;
+                boolean rhsValue = boolRhs.isBool();
+                boolean lhsValue = boolLhs.isBool();
+                if (rhsValue || lhsValue){
+                    if (rhsValue) return boolRhs;
+                    else return boolLhs;
+                }
+                else return boolRhs;
+
+            }
+        }
+        return expr;
     }
 
 

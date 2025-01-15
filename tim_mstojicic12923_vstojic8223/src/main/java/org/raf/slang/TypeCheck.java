@@ -134,9 +134,13 @@ public class TypeCheck {
                 return expr_;
             }
             case NOT_EQUALS, EQUALTO, GREATERTHAN, GREATERTHANOREQ, LESSTHAN, LESSTHANOREQ ->{
+                Expr expresion = null;
                 for (Expr operand : expr_.getOperands()) {
                     operand = typecheck(operand);
-                    operand = tryAndConvert(slang.getBoolType(), operand);
+                    if (expresion == null)
+                        expresion = operand;
+                    else
+                        operand = tryAndConvert(expresion.getResultType(), operand);
                 }
                 expr_.setResultType(slang.getNumberType());
                 return expr_;

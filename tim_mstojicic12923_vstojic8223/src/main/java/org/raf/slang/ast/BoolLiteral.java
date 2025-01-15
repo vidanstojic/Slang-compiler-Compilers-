@@ -14,6 +14,11 @@ public class BoolLiteral extends Expr{
         super(location);
         this.bool = bool;
     }
+
+    public boolean isBool() {
+        return bool;
+    }
+
     @Override
     public void nodePrint(ASTNodePrinter pp) {
         pp.node("bool", () -> pp.terminal(Objects.toString(bool)));

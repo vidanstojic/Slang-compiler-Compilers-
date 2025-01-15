@@ -309,20 +309,21 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public Tree visitLoopStatement(SlangParser.LoopStatementContext ctx) {
         openBlock();
         Expr value = null;
+        SimpleStatement iterator = null;
         if (ctx.expr(0) != null) {
             value = (Expr) visit(ctx.expr(0));
         }
       //  VariableType type = new VariableType(getLocation(ctx), "null");
         VariableType type = null;
         if (ctx.children.toString().contains("numero") || ctx.children.toString().contains("yeahNah")){
-            var name = ctx.ID().getLast().getText();
+            var name = ctx.ID().getFirst().getText();
             type = new NumberType(getLocation(ctx), ctx.children.get(2).toString());
             if (value instanceof NumberLiteral)
                 type = new NumberType(getLocation(ctx), slang.getNumberType().getTypeName());
             else if (value instanceof BoolLiteral)
                 type = new BoolType(getLocation(ctx), slang.getBoolType().getTypeName());
-            var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
-            pushStatement(name, simpleStatement);
+            iterator = new SimpleStatement(getLocation(ctx), name, value, type);
+            pushStatement(name, iterator);
         }
         var exprList = ctx.expr()
                 .stream()
@@ -343,7 +344,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (Statement) x)
                 .toList();
 
-        var loopStatement = new LoopStatement(getLocation(ctx), exprList, statementList);
+        var loopStatement = new LoopStatement(getLocation(ctx), exprList, statementList, iterator);
         closeBlock();
         return loopStatement;
     }
