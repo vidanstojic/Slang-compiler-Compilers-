@@ -10,6 +10,7 @@ public class BoolType extends VariableType{
     public BoolType(Location loc, String typeName) {
         super(loc, typeName);
     }
+    private boolean bool;
 
 
     public String userReadableName() {

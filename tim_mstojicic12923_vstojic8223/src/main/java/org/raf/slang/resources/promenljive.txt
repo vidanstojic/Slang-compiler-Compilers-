@@ -1,1 +1,3 @@
-yeahNah davaj = false && false || true;
+numero marko = 10;
+numero vidan = 5;
+check(marko < 100){}backup{marko = vidan - 1;}

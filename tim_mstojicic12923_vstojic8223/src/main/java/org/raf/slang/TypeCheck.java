@@ -71,6 +71,7 @@ public class TypeCheck {
 
     private Expr typecheck(Expr expr_) {
         if (expr_.getOperation() != null && expr_.getOperation().equals(Expr.Operation.BANG)) {
+            tryAndConvert(slang.getBoolType(), typecheck(expr_.getOperands().get(0)));
             expr_.setResultType(slang.getBoolType());
             return expr_.getOperands().get(0);
         }
@@ -142,7 +143,7 @@ public class TypeCheck {
                     else
                         operand = tryAndConvert(expresion.getResultType(), operand);
                 }
-                expr_.setResultType(slang.getNumberType());
+                expr_.setResultType(slang.getBoolType());
                 return expr_;
             }
             case VALUE -> throw new IllegalStateException();

@@ -1,6 +1,7 @@
-   numero proba = 5;
-   numero br = 1;
-   action numero pr(yeahNah flag, numero x, numero y){numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;}
+   numero proba = 5;//0
+   numero br = 1;//1
+   action numero pr(yeahNah flag, numero x, numero y)
+   {numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;}//2
    pr(true, 1, 2);
        numero vodka = proba * 2 + proba * 2 / proba;
        yeahNah davaj = true || false && true;

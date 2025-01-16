@@ -20,7 +20,7 @@ public class CodeGenerator {
     private HashMap<String, FunctionDefinition> functionDefMap = new HashMap<>();
 
     private InTranslationBytecodeContainer bytecodeContainer = null;
-
+    private StatementList statementList;
     private final Slang slang;
   //  private final IdentityHashMap<FunctionDefinition, Integer> functionLUT;
 
@@ -37,6 +37,7 @@ public class CodeGenerator {
         assert !(slang.hadError() || slang.hadRuntimeError());
         /* This function should only be called for the global scope.  */
         assert bytecodeContainer == null;
+        statementList = input;
         var outerBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
                 new IdentityHashMap<>(),
                 new IdentityHashMap<>(),
@@ -88,14 +89,36 @@ public class CodeGenerator {
         {
             case SimpleStatement simpleStmt -> {
                 var newVarSetter = declareVariable(simpleStmt);
-                compileExpr(simpleStmt.getValue());
+                compileExpr(simpleStmt.getValue());//mozda je ovde potrebno da se ispravi value i da se setuje ako postoji Expr sa operands
                 emit(newVarSetter);
             }
             case IfStatement ifStmt -> {
                 // ovde je napisano kako se izvrsava if u slucaju kada nema else
                 // mi ne cuvamo nigde informacije o else unutar IfStmt pa zato ne mogu da pristupim tome i vidim da li postoji else
-                for (Expr expr : ifStmt.getExprList()) compileExpr(expr);
-                var skipThen = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
+                Expr expr = ifStmt.getExprList().get(0);
+                ElseStatement elseStatement = null;
+                for (Statement statement1 : statementList.getListOfStatements()){
+                    if (statement1 instanceof ElseStatement){
+                        elseStatement = (ElseStatement) statement1;
+                        break;
+                    }
+                }
+                compileExpr(expr);
+//                for (Expr expr : ifStmt.getExprList()) compileExpr(expr);
+                BoolType boolType = null;
+                if (expr.getResultType() instanceof BoolType)
+                    boolType = (BoolType) expr.getResultType();
+                if (boolType.isBool())
+                    emit(Instruction.Code.JUMP_TRUE, Integer.MAX_VALUE);
+                else {
+                    emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
+                    if (elseStatement != null){
+                        compileStatement(elseStatement);
+                        statementList.getListOfStatements().remove(elseStatement);
+                    }
+                }
+                var skipThen = emit(boolType.isBool() ? Instruction.Code.JUMP_TRUE : Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
+//                var skipThen = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
                 InTranslationBytecodeContainer ifBlob = null;
                 if (!ifStmt.getStatementList().isEmpty()){
@@ -331,8 +354,7 @@ public class CodeGenerator {
             }
             case Expr binaryExpr -> {
                 switch (binaryExpr.getOperation()) {
-                    case ADD, SUB, MUL, DIV, MOD, CARET, GREATERTHAN, LESSTHAN,
-                         EQUALTO, LESSTHANOREQ, GREATERTHANOREQ-> {
+                    case ADD, SUB, MUL, DIV, MOD, CARET-> {
                         for (Expr expr1 : binaryExpr.getOperands())
                             compileExpr(expr1);
 //                        var opsRhs = expr.getRhs();
@@ -343,6 +365,14 @@ public class CodeGenerator {
                             case MUL -> Instruction.Code.BIT_MUL;
                             case DIV -> Instruction.Code.BIT_DIV;
                             case CARET -> Instruction.Code.BIT_CR;
+                            default ->
+                                    throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
+                        });
+                    }
+                    case GREATERTHAN, LESSTHAN,
+                            EQUALTO, LESSTHANOREQ, GREATERTHANOREQ -> {
+                        relationalOperands(binaryExpr);
+                        emit(switch (binaryExpr.getOperation()) {
                             case GREATERTHAN -> Instruction.Code.BIT_GT;
                             case LESSTHAN -> Instruction.Code.BIT_LT;
                             case LESSTHANOREQ -> Instruction.Code.BIT_LTE;
@@ -353,23 +383,19 @@ public class CodeGenerator {
                         });
                     }
                     case BANG -> {
-//                        var opsLhs = expr.getLhs();
-//                        compileExpr(opsLhs);
-//                        emit(Instruction.Code.NEGATE);
+                        BoolLiteral boolExpr = (BoolLiteral) expr.getOperands().get(0);
+                        boolExpr.setBool(!boolExpr.isBool());
+                        compileExpr(boolExpr);
+                        emit(Instruction.Code.NEGATE);
                     }
                     case AND, OR -> {
-//                        for (Expr expr1 : expr.getOperands()) {
-                            var returnType = trueOrFalse(expr);
+                        var returnType = (BoolLiteral)trueOrFalse(expr);
                         System.out.println(returnType);
-                        //ova gornja metoda za sada vraca zeljeni booltype, to jest vraca sto treba
-                        //problem je sto ne znam kako dole da ispravim da bi radio isrpavno jump
-                            var operation = expr.getOperation();
-                            var skipOther = emit(operation == Expr.Operation.AND
-                                    ? Instruction.Code.JUMP_FALSE : Instruction.Code.JUMP_TRUE, Integer.MAX_VALUE);
-                            emit(Instruction.Code.POP);
-//                            compileExpr(expr1);
-                            backpatch(skipOther);
-//                        }
+                        var operation = expr.getOperation();
+                        var skipOther = emit(returnType.isBool()
+                                    ? Instruction.Code.JUMP_TRUE : Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
+                        emit(Instruction.Code.POP);
+                        backpatch(skipOther);
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
                 }
@@ -416,12 +442,85 @@ public class CodeGenerator {
                     else return boolLhs;
                 }
                 else return boolRhs;
-
             }
         }
         return expr;
     }
 
+    private Expr relationalOperands(Expr expr){
+        VariableRef varLhs = null;
+        VariableRef varRhs = null;
+        NumberLiteral numberLhs = null;
+        NumberLiteral numberRhs = null;
+        if (expr.getOperands().get(0) instanceof VariableRef){
+            varLhs = (VariableRef)expr.getOperands().get(0);
+            numberLhs = (NumberLiteral) varLhs.getVariable().getValue();
+        } else numberLhs = (NumberLiteral)expr.getOperands().get(0);
+        if (expr.getOperands().get(1) instanceof VariableRef){
+            varRhs = (VariableRef)expr.getOperands().get(1);
+            numberRhs = (NumberLiteral) varRhs.getVariable().getValue();
+        } else numberRhs = (NumberLiteral)expr.getOperands().get(1);
+        switch (expr.getOperation()) {
+            case GREATERTHAN -> {
+                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) > numberRhs.getValue()){
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(true);
+                    expr.setResultType(boolType);
+                }else {
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(false);
+                    expr.setResultType(boolType);
+                }
+            }
+            case LESSTHAN -> {
+                if (numberLhs.getValue() < numberRhs.getValue()){
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(true);
+                    expr.setResultType(boolType);
+                }else {
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(false);
+                    expr.setResultType(boolType);
+                }
+            }
+            case LESSTHANOREQ -> {
+                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) <= numberRhs.getValue()){
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(true);
+                    expr.setResultType(boolType);
+                }else {
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(false);
+                    expr.setResultType(boolType);
+                }
+            }
+            case EQUALTO -> {
+                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) == numberRhs.getValue()){
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(true);
+                    expr.setResultType(boolType);
+                }else {
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(false);
+                    expr.setResultType(boolType);
+                }
+            }
+            case GREATERTHANOREQ -> {
+                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) >= numberRhs.getValue()){
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(true);
+                    expr.setResultType(boolType);
+                }else {
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(false);
+                    expr.setResultType(boolType);
+                }
+            }
+            default ->
+                    throw new IllegalStateException("Unexpected value: " + expr.getOperation());
+        }
+        return expr;
+    }
 
 
 
@@ -469,4 +568,5 @@ public class CodeGenerator {
 
 */
 }
+// src\main\java\org\raf\slang\resources\promenljive.txt
 /*numero br = 1; action numero pr(yeahNah flag, numero x, numero y){numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;} pr(true, 1, 2);*/
