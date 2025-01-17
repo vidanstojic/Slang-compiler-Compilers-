@@ -1,9 +1,0 @@
-numero broj = 2;
-numero brojDrugi = 3;
-
-action numero funkcija(){
-    broj = 2;
-    getback broj;
-}
-replay(broj < 2){}
-dropmsg(broj);

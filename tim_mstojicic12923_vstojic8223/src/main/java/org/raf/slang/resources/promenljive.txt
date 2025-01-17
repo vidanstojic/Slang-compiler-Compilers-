@@ -1,4 +1,0 @@
-numero marko = 10;
-numero vidan = 5;
-marko = vidan;
-dropmsg(marko);

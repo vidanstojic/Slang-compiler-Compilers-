@@ -22,5 +22,7 @@
                }
            }
        }
+       dropmsg(vodka);
+       dropmsg(proba);
    squad numero mare[2] = {1,2};
    numero k = mare[0];
