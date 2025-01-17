@@ -18,6 +18,7 @@ public class CodeGenerator {
     private Stack<List<Integer>> continueStmts = new Stack<>();
     private Stack<List<Integer>> exitStmts = new Stack<>();
     private HashMap<String, FunctionDefinition> functionDefMap = new HashMap<>();
+    private HashMap<String, Function> functionMap = new HashMap<>();
 
     private InTranslationBytecodeContainer bytecodeContainer = null;
     private StatementList statementList;
@@ -206,8 +207,12 @@ public class CodeGenerator {
                     }
                 };
                 var newVarSetter = declareVariable(new SimpleStatement(functionDefinition.getLocation(), functionDefinition.getName(), null,variableType));
-//                var fnId = compileFunction(functionDefinition);
-//                emit(Instruction.Code.BUILD_CLOSURE, fnId);
+                var function = new Function();
+                function.setFuncDef(functionDefinition);
+                var fnId = slang.addFunction(function);
+
+                emit(Instruction.Code.BUILD_CLOSURE, fnId);
+                functionMap.put(functionDefinition.getName(), function);
 
 //                var function = new Function();
 //                function.setFuncDef(functionDefinition);
@@ -216,6 +221,7 @@ public class CodeGenerator {
                 //    var fnId = compileFunction(functionDefinition);
 //                emit(Instruction.Code.BUILD_CLOSURE, fnId);
                 emit(newVarSetter);
+                emit(Instruction.Code.PUSH_FUNC, fnId);
             }
             case FunctionCallStatement functionCallStatement -> {
               //  Expr expr = new Expr(functionCallStatement.getLocation()); // IZMENITI
@@ -236,8 +242,9 @@ public class CodeGenerator {
     }
 
     private void compileFunction(FunctionDefinition fn) {
-        var function = new Function();
-        function.setFuncDef(fn);
+        Function function = null;
+        if (functionMap.get(fn.getName())!= null)
+            function = functionMap.get(fn.getName());
         var functionBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
                 new IdentityHashMap<>(),// bytecodeContainer.getLocalSlots
                 new IdentityHashMap<>(),
@@ -272,9 +279,6 @@ public class CodeGenerator {
         bytecodeContainer = bytecodeContainer.getPreviousBlob();
 
 
-
-
-//        return newFnId;
     }
 
 
@@ -300,14 +304,12 @@ public class CodeGenerator {
             return new Instruction(Instruction.Code.GET_LOCAL, local);
 
         /* So, this is a upvalue.  But is it new?  */
-        var upval = blob.getUpvalSlots().get(localSimpleStatement);// osigurati se da localSimpleStatement nije ostao null
+        var upval = blob.getUpvalSlots().get(localSimpleStatement);
         if (upval != null)
             /* No, it isn't.  */
             return new Instruction(Instruction.Code.GET_UPVALUE, upval.slotNr());
 
 //        /* It is.  */
-//        if(blob.getPreviousBlob() == null)
-//            return new Instruction(Instruction.Code.GET_UPVALUE, blob.getUpvalSlots().size());
         var inSuperscope = findLocalInsn(blob.getPreviousBlob(), decl);
         var upvalSlot = blob.getUpvalSlots().size();
 
@@ -357,8 +359,6 @@ public class CodeGenerator {
                     case ADD, SUB, MUL, DIV, MOD, CARET-> {
                         for (Expr expr1 : binaryExpr.getOperands())
                             compileExpr(expr1);
-//                        var opsRhs = expr.getRhs();
-//                        compileExpr(opsRhs);
                         emit(switch (binaryExpr.getOperation()) {
                             case ADD -> Instruction.Code.BIT_PLUS;
                             case SUB -> Instruction.Code.BIT_MINUS;
@@ -413,7 +413,6 @@ public class CodeGenerator {
                         var operation = expr.getOperation();
                         var skipOther = emit(returnType.isBool()
                                     ? Instruction.Code.JUMP_TRUE : Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
-                        emit(Instruction.Code.POP);
                         backpatch(skipOther);
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
@@ -613,6 +612,9 @@ public class CodeGenerator {
     private int emit(Instruction.Code instructionCode, long arg1) {
         return emit(new Instruction(instructionCode, arg1));
     }
+//    private int emit(Instruction.Code instructionCode, FunctionDefinition arg1) {
+//        return emit(new Instruction(instructionCode, arg1));
+//    }
 
     private int emit(Instruction.Code instructionCode) {
         return emit(new Instruction(instructionCode));

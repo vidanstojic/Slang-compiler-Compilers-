@@ -1,3 +1,4 @@
 numero marko = 10;
 numero vidan = 5;
-check(marko < 100){}backup{marko = marko - 1;}
+marko = vidan;
+dropmsg(marko);

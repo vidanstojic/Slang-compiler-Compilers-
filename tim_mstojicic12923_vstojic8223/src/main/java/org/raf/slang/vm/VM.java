@@ -11,7 +11,7 @@ public class VM {
     public VM(Slang context) {
         this.slang = context;
     }
-
+    private int funcId = 0;
     private ArrayList<Value> globals = new ArrayList<>();
 
     public void run(BytecodeContainer bytecode) {
@@ -85,7 +85,6 @@ public class VM {
                     locals[(int)insn.getArg1()] = stack.getLast();
                     stack.removeLast();
                 }
-
                 case COLLECT -> {
                     var cnt = /* Count.  */ insn.getArg1();
                     var elements = new ArrayList<>(stack.subList((int) (stack.size() - cnt),
@@ -119,10 +118,10 @@ public class VM {
                    a Java null in place of a return value, or really any
                    arbitrary value, as it will never actually be read.  */
                     final var retval = retVoid ? null : stack.getLast();
-                //    ip = callstack.getLast().getPrevIp();
+                    ip = callstack.getLast().getPrevIp();
 
                     callstack.getLast().getOperandStack().add(retval);
-                   // callstack.removeLast();
+                    callstack.removeLast();
                 }
                 case FUNCTION_CALL -> {
                     final var aty = insn.getArg1();
@@ -158,6 +157,25 @@ public class VM {
                     stack.add(new Value.Closure(fn.getCode(),
                             newUpvalues,
                             fn.getLocalCount()));
+                }
+                case PUSH_FUNC -> {
+                    var fn = slang.getFunction((int)insn.getArg1());
+                    var um = fn.getUpvalueMap();
+                    stack.add(new Value.Closure(fn.getCode(),new Value[um.length],fn.getLocalCount()));
+                }
+                case PUSH_TRUE -> {
+                    stack.add(new Value.Bool(true));
+                }
+                case PUSH_FALSE -> {
+                    stack.add(new Value.Bool(false));
+                }
+                case JUMP_TRUE -> {
+                    stack.add(new Value.Bool(true));
+                }
+                case SCAN -> {
+
+                }case JUMP_FALSE -> {
+                    stack.add(new Value.Bool(false));
                 }
             }
         }
